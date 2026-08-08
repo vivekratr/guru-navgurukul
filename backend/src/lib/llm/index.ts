@@ -12,6 +12,12 @@ export { loadModelRoleConfig } from "./model-role-repository.js";
 export { createOpenRouterClient } from "./openrouter-client.js";
 export { isModelRole, parseRoleConfig } from "./role-config.js";
 export {
+  validateVisionIngestSemantics,
+  visionIngestChunkSchema,
+  visionIngestOutputSchema,
+  type VisionIngestOutput,
+} from "./schemas/vision-ingest.js";
+export {
   conceptDifficultySchema,
   knowledgeConceptSchema,
   knowledgeExtractionOutputSchema,
@@ -23,6 +29,7 @@ export {
 export {
   MODEL_ROLES,
   type CallRoleResult,
+  type ChatContentPart,
   type ChatMessage,
   type ModelAttemptDiagnostic,
   type ModelRole,
