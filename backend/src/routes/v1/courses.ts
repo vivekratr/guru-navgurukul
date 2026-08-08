@@ -87,4 +87,31 @@ coursesRouter.post(
   }),
 );
 
+coursesRouter.post(
+  "/:id/retry-artifact/:artifactType",
+  asyncHandler(async (req, res) => {
+    const courseId = courseIdParamSchema.parse(req.params.id);
+    const artifactType = req.params.artifactType;
+
+    if (artifactType !== "flashcards" && artifactType !== "summary") {
+      res.status(400).json({
+        error: {
+          code: "INVALID_STATE",
+          message: "artifactType must be flashcards or summary",
+          retryable: false,
+        },
+      });
+      return;
+    }
+
+    const result = await generationService.retryArtifact(
+      req.supabase!,
+      courseId,
+      artifactType,
+    );
+
+    res.status(202).json(result);
+  }),
+);
+
 export default coursesRouter;

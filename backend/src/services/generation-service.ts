@@ -28,3 +28,21 @@ export async function retryKnowledgeExtraction(
     status: result.status,
   };
 }
+
+export async function retryArtifact(
+  supabase: SupabaseClient,
+  courseId: string,
+  artifactType: string,
+) {
+  const result = await queueRepository.retryArtifactGeneration(
+    supabase,
+    courseId,
+    artifactType,
+  );
+
+  return {
+    id: result.id,
+    artifact_type: result.artifact_type,
+    status: result.status,
+  };
+}

@@ -437,11 +437,18 @@ describe.skipIf(!hasSupabaseConfig)("knowledge worker integration", () => {
 
     expect(course?.status).toBe("generating_artifacts");
 
-    const { count: ingestCount } = await supabase
-      .from("job_log")
-      .select("*", { count: "exact", head: true })
-      .eq("queue_name", "ingest_source");
+    const { data: sources } = await supabase
+      .from("sources")
+      .select("status")
+      .eq("course_id", courseId);
 
-    expect(ingestCount).toBe(0);
+    expect(sources?.every((source) => source.status === "done")).toBe(true);
+
+    const { count: chunkCount } = await supabase
+      .from("source_chunks")
+      .select("*", { count: "exact", head: true })
+      .eq("course_id", courseId);
+
+    expect(chunkCount).toBe(1);
   });
 });

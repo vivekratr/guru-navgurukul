@@ -175,3 +175,42 @@ export async function purgeGenerateArtifactsMessages(
     throw error;
   }
 }
+
+export type RetryArtifactGenerationResult = {
+  id: string;
+  artifact_type: string;
+  status: string;
+  enqueued: boolean;
+};
+
+export async function retryArtifactGeneration(
+  supabase: SupabaseClient,
+  courseId: string,
+  artifactType: string,
+): Promise<RetryArtifactGenerationResult> {
+  const { data, error } = await supabase.rpc("retry_artifact_generation", {
+    p_course_id: courseId,
+    p_artifact_type: artifactType,
+  });
+
+  if (error) {
+    throwMappedRpcError(error);
+  }
+
+  return data as RetryArtifactGenerationResult;
+}
+
+export async function enqueueGenerateArtifactsMessage(
+  supabase: SupabaseClient,
+  courseId: string,
+  artifactType: string,
+): Promise<void> {
+  const { error } = await supabase.rpc("enqueue_generate_artifacts_message", {
+    p_course_id: courseId,
+    p_artifact_type: artifactType,
+  });
+
+  if (error) {
+    throw error;
+  }
+}

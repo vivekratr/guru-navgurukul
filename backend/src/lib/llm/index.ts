@@ -18,6 +18,14 @@ export {
   type VisionIngestOutput,
 } from "./schemas/vision-ingest.js";
 export {
+  flashcardItemSchema,
+  flashcardsOutputSchema,
+  summaryOutputSchema,
+  validateFlashcardsSemantics,
+  type FlashcardsOutput,
+  type SummaryOutput,
+} from "./schemas/content-generation.js";
+export {
   conceptDifficultySchema,
   knowledgeConceptSchema,
   knowledgeExtractionOutputSchema,
