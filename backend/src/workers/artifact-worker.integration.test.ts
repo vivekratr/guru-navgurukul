@@ -419,4 +419,110 @@ describe.skipIf(!hasSupabaseConfig)("artifact worker integration", () => {
 
     expect(count).toBe(2);
   });
+
+  it("sets partially_ready when summary succeeds and flashcards fail permanently", async () => {
+    const { courseId, conceptIds } = await createCourseWithKnowledge(
+      supabase,
+      user.id,
+    );
+
+    await enqueueGenerateArtifactsMessage(supabase, courseId, "summary");
+
+    await runArtifactWorkerTick(supabase, {
+      callSummaryGeneration: vi.fn().mockResolvedValue(mockSummary),
+    });
+
+    await enqueueGenerateArtifactsMessage(supabase, courseId, "flashcards");
+
+    const flashcardsMessage = await readArtifactMessage(supabase);
+    expect(flashcardsMessage?.message.artifact_type).toBe("flashcards");
+
+    await processArtifactMessage(
+      supabase,
+      { ...flashcardsMessage!, read_ct: 4 },
+      {
+        callFlashcardsGeneration: vi
+          .fn()
+          .mockRejectedValue(new Error("All models failed")),
+      },
+    );
+
+    const { data: course } = await supabase
+      .from("courses")
+      .select("status")
+      .eq("id", courseId)
+      .single();
+
+    expect(course?.status).toBe("partially_ready");
+
+    const { data: artifacts } = await supabase
+      .from("artifact_generation_status")
+      .select("artifact_type, status")
+      .eq("course_id", courseId);
+
+    expect(artifacts).toEqual(
+      expect.arrayContaining([
+        { artifact_type: "flashcards", status: "failed_permanent" },
+        { artifact_type: "summary", status: "done" },
+      ]),
+    );
+
+    const { count: flashcardCount } = await supabase
+      .from("flashcards")
+      .select("*", { count: "exact", head: true })
+      .eq("course_id", courseId);
+
+    expect(flashcardCount).toBe(0);
+  });
+
+  it("keeps course generating_artifacts when both artifacts fail permanently", async () => {
+    const { courseId } = await createCourseWithKnowledge(supabase, user.id);
+
+    for (const artifactType of ["flashcards", "summary"] as const) {
+      await enqueueGenerateArtifactsMessage(supabase, courseId, artifactType);
+
+      const message = await readArtifactMessage(supabase);
+      expect(message?.message.artifact_type).toBe(artifactType);
+
+      await processArtifactMessage(
+        supabase,
+        { ...message!, read_ct: 4 },
+        {
+          callFlashcardsGeneration: vi
+            .fn()
+            .mockRejectedValue(new Error("All models failed")),
+          callSummaryGeneration: vi
+            .fn()
+            .mockRejectedValue(new Error("All models failed")),
+        },
+      );
+    }
+
+    const { data: course } = await supabase
+      .from("courses")
+      .select("status, last_error")
+      .eq("id", courseId)
+      .single();
+
+    expect(course?.status).toBe("generating_artifacts");
+
+    const { data: artifacts } = await supabase
+      .from("artifact_generation_status")
+      .select("artifact_type, status")
+      .eq("course_id", courseId);
+
+    expect(artifacts).toEqual(
+      expect.arrayContaining([
+        { artifact_type: "flashcards", status: "failed_permanent" },
+        { artifact_type: "summary", status: "failed_permanent" },
+      ]),
+    );
+
+    const { count: conceptCount } = await supabase
+      .from("concepts")
+      .select("*", { count: "exact", head: true })
+      .eq("course_id", courseId);
+
+    expect(conceptCount).toBe(2);
+  });
 });

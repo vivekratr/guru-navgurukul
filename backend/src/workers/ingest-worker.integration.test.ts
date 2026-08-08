@@ -402,4 +402,67 @@ describe.skipIf(!hasSupabaseConfig)("ingest worker integration", () => {
 
     await supabase.from("courses").delete().eq("id", courseId);
   });
+
+  it("isolates permanent source failure while other sources complete", async () => {
+    const { courseId, sourceIds } = await createCourseWithSources(supabase, user.id, [
+      { text: "Source A content" },
+      { text: "Source B content" },
+      { text: "Source C content" },
+    ]);
+
+    for (const sourceId of sourceIds) {
+      await enqueueSource(supabase, sourceId);
+    }
+
+    const failingSourceId = sourceIds[1]!;
+
+    await runIngestWorkerTick(supabase, {
+      callVisionIngest: async (_client, source) => {
+        if (source.id === failingSourceId) {
+          throw new Error("permanent ingest failure");
+        }
+
+        return mockVisionSuccess;
+      },
+    });
+
+    await supabase
+      .from("sources")
+      .update({ status: "failed", attempt_count: 3 })
+      .eq("id", failingSourceId);
+
+    await enqueueSource(supabase, failingSourceId);
+
+    await runIngestWorkerTick(supabase, {
+      callVisionIngest: async () => {
+        throw new Error("still failing");
+      },
+    });
+
+    const { data: sources } = await supabase
+      .from("sources")
+      .select("id, status")
+      .eq("course_id", courseId)
+      .order("created_at");
+
+    expect(sources?.map((source) => source.status)).toEqual([
+      "done",
+      "failed_permanent",
+      "done",
+    ]);
+
+    const { data: chunks } = await supabase
+      .from("source_chunks")
+      .select("source_id")
+      .eq("course_id", courseId);
+
+    expect(chunks?.map((chunk) => chunk.source_id)).toEqual(
+      expect.arrayContaining([sourceIds[0], sourceIds[2]]),
+    );
+    expect(chunks?.some((chunk) => chunk.source_id === failingSourceId)).toBe(
+      false,
+    );
+
+    await supabase.from("courses").delete().eq("id", courseId);
+  });
 });

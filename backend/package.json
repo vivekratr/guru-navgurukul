@@ -17,7 +17,9 @@
     "db:check": "tsx scripts/check-remote-schema.ts",
     "worker:ingest": "tsx scripts/run-ingest-worker.ts",
     "worker:knowledge": "tsx scripts/run-knowledge-worker.ts",
-    "worker:artifacts": "tsx scripts/run-artifact-worker.ts"
+    "worker:artifacts": "tsx scripts/run-artifact-worker.ts",
+    "inspect:jobs": "tsx scripts/inspect-jobs.ts",
+    "inspect:failed-jobs": "tsx scripts/inspect-jobs.ts --failed"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.47.10",
