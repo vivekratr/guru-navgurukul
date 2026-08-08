@@ -7,6 +7,10 @@ import {
   visionIngestOutputSchema,
 } from "../lib/llm/index.js";
 import { getRetryBackoffSeconds } from "./ingest/backoff.js";
+import {
+  buildVisionIngestMessages,
+  type SourceRecord as IngestSourceRecord,
+} from "./ingest/content.js";
 import { classifyIngestFailure } from "./ingest/failure.js";
 import { decideIdempotency } from "./ingest/idempotency.js";
 import { parseIngestQueueMessage } from "./ingest/message.js";
@@ -25,14 +29,7 @@ export type WorkerTickSummary = {
   skipped: number;
 };
 
-export type SourceRecord = {
-  id: string;
-  course_id: string;
-  type: "text" | "doc" | "image" | "video";
-  title: string | null;
-  storage_path: string | null;
-  raw_text: string | null;
-  duration_sec: number | null;
+export type SourceRecord = IngestSourceRecord & {
   status?: string;
   attempt_count?: number;
 };
@@ -56,24 +53,12 @@ async function defaultCallVisionIngest(
   source: SourceRecord,
   deps?: Partial<CallRoleDependencies>,
 ) {
-  if (!source.raw_text?.trim()) {
-    throw new Error("Text source is missing raw_text");
-  }
+  const messages = await buildVisionIngestMessages(supabase, source);
 
   return callRole(
     {
       role: "vision_ingest",
-      messages: [
-        {
-          role: "system",
-          content:
-            'Return only valid JSON in this exact shape: {"chunks":[{"heading":"optional","text":"chunk body","position":0}]}. Include at least one non-empty chunk. Do not wrap the response in markdown.',
-        },
-        {
-          role: "user",
-          content: source.raw_text,
-        },
-      ],
+      messages,
       outputSchema: visionIngestOutputSchema,
       validateOutput: validateVisionIngestSemantics,
       normalizeParsed: (parsed) =>
