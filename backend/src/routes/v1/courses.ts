@@ -74,4 +74,17 @@ coursesRouter.post(
   }),
 );
 
+coursesRouter.post(
+  "/:id/retry-knowledge-extraction",
+  asyncHandler(async (req, res) => {
+    const courseId = courseIdParamSchema.parse(req.params.id);
+    const course = await generationService.retryKnowledgeExtraction(
+      req.supabase!,
+      courseId,
+    );
+
+    res.status(202).json(course);
+  }),
+);
+
 export default coursesRouter;

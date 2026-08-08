@@ -158,7 +158,9 @@ export async function processIngestMessage(
     return "skipped";
   }
 
-  const idempotency = decideIdempotency(source);
+  const idempotency = decideIdempotency({
+    status: source.status ?? "pending",
+  });
 
   if (idempotency.action === "skip") {
     await supabase.rpc("skip_ingest_message", {

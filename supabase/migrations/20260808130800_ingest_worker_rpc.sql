@@ -454,3 +454,5 @@ $$;
 
 revoke all on function public.archive_malformed_ingest_message(bigint, jsonb, text) from public;
 grant execute on function public.archive_malformed_ingest_message(bigint, jsonb, text) to service_role;
+
+grant execute on function public.enqueue_ingest_source_message(uuid) to service_role;

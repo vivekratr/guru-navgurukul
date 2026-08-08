@@ -237,7 +237,9 @@ export async function processIngestMessage(
     return "skipped";
   }
 
-  const idempotency = decideIdempotency(source);
+  const idempotency = decideIdempotency({
+    status: source.status ?? "pending",
+  });
 
   if (idempotency.action === "skip") {
     await skipMessage(supabase, {

@@ -25,6 +25,10 @@ const envSchema = z.object({
     z.string().min(1).optional(),
   ),
   OPENROUTER_API_KEY: optionalSecret,
+  LLM_CHAT_COMPLETIONS_URL: z.preprocess(
+    emptyToUndefined,
+    z.string().url().optional(),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;

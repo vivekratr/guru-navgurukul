@@ -4,13 +4,14 @@ import {
   RateLimitError,
   TimeoutError,
 } from "./errors.js";
+import { env } from "../../config/index.js";
 import type {
   ChatCompletionRequest,
   ChatCompletionResponse,
   OpenRouterClient,
 } from "./types.js";
 
-const OPENROUTER_CHAT_COMPLETIONS_URL =
+const DEFAULT_CHAT_COMPLETIONS_URL =
   "https://openrouter.ai/api/v1/chat/completions";
 
 type OpenRouterChatResponse = {
@@ -29,6 +30,9 @@ function isAbortError(error: unknown): boolean {
 }
 
 export function createOpenRouterClient(apiKey: string): OpenRouterClient {
+  const chatCompletionsUrl =
+    env.LLM_CHAT_COMPLETIONS_URL ?? DEFAULT_CHAT_COMPLETIONS_URL;
+
   return {
     async chatCompletion(
       request: ChatCompletionRequest,
@@ -37,7 +41,7 @@ export function createOpenRouterClient(apiKey: string): OpenRouterClient {
       const timeout = setTimeout(() => controller.abort(), request.timeout_ms);
 
       try {
-        const response = await fetch(OPENROUTER_CHAT_COMPLETIONS_URL, {
+        const response = await fetch(chatCompletionsUrl, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiKey}`,

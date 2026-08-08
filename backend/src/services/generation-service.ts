@@ -13,3 +13,18 @@ export async function generateCourse(
     status: result.status,
   };
 }
+
+export async function retryKnowledgeExtraction(
+  supabase: SupabaseClient,
+  courseId: string,
+) {
+  const result = await queueRepository.retryKnowledgeExtraction(
+    supabase,
+    courseId,
+  );
+
+  return {
+    id: result.id,
+    status: result.status,
+  };
+}
