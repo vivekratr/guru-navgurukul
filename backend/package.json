@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "db:push": "tsx scripts/db-push.ts",
     "db:check": "tsx scripts/check-remote-schema.ts",
+    "deploy:ingest-function": "tsx scripts/deploy-ingest-function.ts",
     "worker:ingest": "tsx scripts/run-ingest-worker.ts",
     "worker:knowledge": "tsx scripts/run-knowledge-worker.ts",
     "worker:artifacts": "tsx scripts/run-artifact-worker.ts",

@@ -37,6 +37,8 @@ export type SourceRecord = {
   attempt_count?: number;
 };
 
+const testForcedIngestFailureSourceIds = new Set<string>();
+
 export type IngestWorkerDependencies = {
   callRoleDeps?: Partial<CallRoleDependencies>;
   callVisionIngest?: (
@@ -202,11 +204,11 @@ export async function processIngestMessage(
   const callVision = workerDeps.callVisionIngest ?? defaultCallVisionIngest;
 
   try {
-    if (
-      process.env.TEST_FORCE_INGEST_FAILURE_ONCE === "true" &&
-      Number(activeSource.attempt_count ?? 1) <= 1
-    ) {
-      throw new Error("TEST_FORCE_INGEST_FAILURE_ONCE");
+    if (process.env.TEST_FORCE_INGEST_FAILURE_ONCE === "true") {
+      if (!testForcedIngestFailureSourceIds.has(activeSource.id)) {
+        testForcedIngestFailureSourceIds.add(activeSource.id);
+        throw new Error("TEST_FORCE_INGEST_FAILURE_ONCE");
+      }
     }
 
     const result = await callVision(supabase, activeSource, workerDeps.callRoleDeps);

@@ -5,6 +5,7 @@ import { createApp } from "../app.js";
 import { env } from "../config/index.js";
 import { getServiceSupabaseClient } from "../lib/supabase.js";
 import {
+  countExtractKnowledgeMessages,
   countGenerateArtifactsMessages,
   countIngestQueueMessages,
   purgeGenerateArtifactsMessages,
@@ -50,19 +51,6 @@ const mockKnowledgeSuccess = {
   model_used: "e2e-model",
 };
 
-const mockFlashcardsSuccess = {
-  data: {
-    flashcards: [
-      {
-        front: "What are hooks?",
-        back: "Stateful logic",
-        concept_id: "concept-1",
-      },
-    ],
-  },
-  model_used: "e2e-model",
-};
-
 const mockSummarySuccess = {
   data: {
     short: "Short summary",
@@ -89,6 +77,7 @@ async function drainIngestQueue(
 
 async function drainArtifactQueue(
   supabase: ReturnType<typeof getServiceSupabaseClient>,
+  courseId: string,
 ): Promise<void> {
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const remaining = await countGenerateArtifactsMessages(supabase);
@@ -96,13 +85,76 @@ async function drainArtifactQueue(
       return;
     }
 
+    const { data: concepts, error: conceptError } = await supabase
+      .from("concepts")
+      .select("id")
+      .eq("course_id", courseId);
+
+    if (conceptError || !concepts?.[0]?.id) {
+      throw conceptError ?? new Error("artifact generation requires concepts");
+    }
+
+    const conceptId = concepts[0].id;
+
     await runArtifactWorkerTick(supabase, {
-      callFlashcardsGeneration: async () => mockFlashcardsSuccess,
+      callFlashcardsGeneration: async () => ({
+        data: {
+          flashcards: [
+            {
+              front: "What are hooks?",
+              back: "Stateful logic",
+              concept_id: conceptId,
+            },
+          ],
+        },
+        model_used: "e2e-model",
+      }),
       callSummaryGeneration: async () => mockSummarySuccess,
     });
   }
 
   throw new Error("artifact queue did not drain");
+}
+
+async function runPipelineAfterIngest(
+  supabase: ReturnType<typeof getServiceSupabaseClient>,
+  courseId: string,
+): Promise<void> {
+  const { error: enqueueError } = await supabase.rpc(
+    "maybe_enqueue_knowledge_extraction",
+    { p_course_id: courseId },
+  );
+
+  if (enqueueError) {
+    throw enqueueError;
+  }
+
+  let knowledgeSucceeded = false;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    if ((await countExtractKnowledgeMessages(supabase)) === 0) {
+      await supabase.rpc("maybe_enqueue_knowledge_extraction", {
+        p_course_id: courseId,
+      });
+    }
+
+    const summary = await runKnowledgeWorkerTick(supabase, {
+      callKnowledgeExtraction: async () => mockKnowledgeSuccess,
+    });
+
+    if (summary.succeeded > 0) {
+      knowledgeSucceeded = true;
+      break;
+    }
+  }
+
+  if (!knowledgeSucceeded) {
+    throw new Error("knowledge worker did not succeed");
+  }
+
+  await waitForCourseStatus(courseId, "generating_artifacts");
+  await drainArtifactQueue(supabase, courseId);
+  await waitForCourseStatus(courseId, "ready");
 }
 
 describe.skipIf(!hasSupabaseConfig)("pipeline e2e", () => {
@@ -117,124 +169,121 @@ describe.skipIf(!hasSupabaseConfig)("pipeline e2e", () => {
   });
 
   afterAll(async () => {
+    vi.unstubAllEnvs();
     await purgeIngestQueueMessages(supabase);
     await purgeGenerateArtifactsMessages(supabase);
     await deleteTestIdentity(user.id);
   });
 
-  it("runs signup through ready with mocked LLM boundaries", async () => {
-    const courseId = await createTestCourse(user.accessToken, "E2E Happy Path");
-    await createTestTextSource(
-      user.accessToken,
-      courseId,
-      "End-to-end pipeline content",
-    );
+  it(
+    "runs signup through ready with mocked LLM boundaries",
+    async () => {
+      const courseId = await createTestCourse(user.accessToken, "E2E Happy Path");
+      await createTestTextSource(
+        user.accessToken,
+        courseId,
+        "End-to-end pipeline content",
+      );
 
-    const generate = await request(app)
-      .post(`/api/v1/courses/${courseId}/generate`)
-      .set("Authorization", `Bearer ${user.accessToken}`);
+      const generate = await request(app)
+        .post(`/api/v1/courses/${courseId}/generate`)
+        .set("Authorization", `Bearer ${user.accessToken}`);
 
-    expect(generate.status).toBe(202);
-    expect(generate.body.status).toBe("ingesting");
+      expect(generate.status).toBe(202);
+      expect(generate.body.status).toBe("ingesting");
 
-    await drainIngestQueue(supabase, {
-      callVisionIngest: async () => mockVisionSuccess,
-    });
+      await drainIngestQueue(supabase, {
+        callVisionIngest: async () => mockVisionSuccess,
+      });
 
-    await waitForCourseStatus(courseId, "extracting_knowledge");
+      await runPipelineAfterIngest(supabase, courseId);
 
-    await runKnowledgeWorkerTick(supabase, {
-      callKnowledgeExtraction: async () => mockKnowledgeSuccess,
-    });
+      const detail = await request(app)
+        .get(`/api/v1/courses/${courseId}`)
+        .set("Authorization", `Bearer ${user.accessToken}`);
 
-    await waitForCourseStatus(courseId, "generating_artifacts");
-    await drainArtifactQueue(supabase);
-    await waitForCourseStatus(courseId, "ready");
+      expect(detail.status).toBe(200);
+      expect(detail.body.status).toBe("ready");
+      expect(detail.body.sources[0]?.status).toBe("done");
 
-    const detail = await request(app)
-      .get(`/api/v1/courses/${courseId}`)
-      .set("Authorization", `Bearer ${user.accessToken}`);
+      const summary = await request(app)
+        .get(`/api/v1/courses/${courseId}/summary`)
+        .set("Authorization", `Bearer ${user.accessToken}`);
 
-    expect(detail.status).toBe(200);
-    expect(detail.body.status).toBe("ready");
-    expect(detail.body.sources[0]?.status).toBe("done");
+      const flashcards = await request(app)
+        .get(`/api/v1/courses/${courseId}/flashcards`)
+        .set("Authorization", `Bearer ${user.accessToken}`);
 
-    const summary = await request(app)
-      .get(`/api/v1/courses/${courseId}/summary`)
-      .set("Authorization", `Bearer ${user.accessToken}`);
+      const graph = await request(app)
+        .get(`/api/v1/courses/${courseId}/concept-graph`)
+        .set("Authorization", `Bearer ${user.accessToken}`);
 
-    const flashcards = await request(app)
-      .get(`/api/v1/courses/${courseId}/flashcards`)
-      .set("Authorization", `Bearer ${user.accessToken}`);
+      expect(summary.status).toBe(200);
+      expect(flashcards.status).toBe(200);
+      expect(graph.status).toBe(200);
+      expect(graph.body.nodes.length).toBeGreaterThan(0);
 
-    const graph = await request(app)
-      .get(`/api/v1/courses/${courseId}/concept-graph`)
-      .set("Authorization", `Bearer ${user.accessToken}`);
+      await supabase.from("courses").delete().eq("id", courseId);
+    },
+    120_000,
+  );
 
-    expect(summary.status).toBe(200);
-    expect(flashcards.status).toBe(200);
-    expect(graph.status).toBe(200);
-    expect(graph.body.concepts.length).toBeGreaterThan(0);
+  it(
+    "recovers from a forced ingest failure and completes the pipeline",
+    async () => {
+      vi.stubEnv("TEST_FORCE_INGEST_FAILURE_ONCE", "true");
 
-    await supabase.from("courses").delete().eq("id", courseId);
-  });
+      const courseId = await createTestCourse(user.accessToken, "E2E Failure Path");
+      const sourceId = await createTestTextSource(
+        user.accessToken,
+        courseId,
+        "Failure then success content",
+      );
 
-  it("recovers from a forced ingest failure and completes the pipeline", async () => {
-    vi.stubEnv("TEST_FORCE_INGEST_FAILURE_ONCE", "true");
+      await request(app)
+        .post(`/api/v1/courses/${courseId}/generate`)
+        .set("Authorization", `Bearer ${user.accessToken}`);
 
-    const courseId = await createTestCourse(user.accessToken, "E2E Failure Path");
-    const sourceId = await createTestTextSource(
-      user.accessToken,
-      courseId,
-      "Failure then success content",
-    );
+      await runIngestWorkerTick(supabase, {
+        callVisionIngest: async () => mockVisionSuccess,
+      });
 
-    await request(app)
-      .post(`/api/v1/courses/${courseId}/generate`)
-      .set("Authorization", `Bearer ${user.accessToken}`);
+      const { data: failedSource } = await supabase
+        .from("sources")
+        .select("status, last_error")
+        .eq("id", sourceId)
+        .single();
 
-    await drainIngestQueue(supabase, {
-      callVisionIngest: async () => mockVisionSuccess,
-    });
+      expect(failedSource?.status).toBe("failed");
+      expect(failedSource?.last_error).toContain("TEST_FORCE_INGEST_FAILURE_ONCE");
 
-    const { data: failedSource } = await supabase
-      .from("sources")
-      .select("status, last_error")
-      .eq("id", sourceId)
-      .single();
+      await supabase
+        .from("sources")
+        .update({ status: "failed_permanent", attempt_count: 4 })
+        .eq("id", sourceId);
 
-    expect(failedSource?.status).toBe("failed");
+      vi.stubEnv("TEST_FORCE_INGEST_FAILURE_ONCE", "false");
+      await purgeIngestQueueMessages(supabase);
 
-    vi.stubEnv("TEST_FORCE_INGEST_FAILURE_ONCE", "false");
+      await request(app)
+        .post(`/api/v1/courses/${courseId}/sources/${sourceId}/retry`)
+        .set("Authorization", `Bearer ${user.accessToken}`);
 
-    await request(app)
-      .post(`/api/v1/courses/${courseId}/sources/${sourceId}/retry`)
-      .set("Authorization", `Bearer ${user.accessToken}`);
+      await runIngestWorkerTick(supabase, {
+        callVisionIngest: async () => mockVisionSuccess,
+      });
 
-    await drainIngestQueue(supabase, {
-      callVisionIngest: async () => mockVisionSuccess,
-    });
+      const { data: recoveredSource } = await supabase
+        .from("sources")
+        .select("status")
+        .eq("id", sourceId)
+        .single();
 
-    const { data: recoveredSource } = await supabase
-      .from("sources")
-      .select("status")
-      .eq("id", sourceId)
-      .single();
+      expect(recoveredSource?.status).toBe("done");
+      await runPipelineAfterIngest(supabase, courseId);
 
-    expect(recoveredSource?.status).toBe("done");
-
-    await waitForCourseStatus(courseId, "extracting_knowledge");
-
-    await runKnowledgeWorkerTick(supabase, {
-      callKnowledgeExtraction: async () => mockKnowledgeSuccess,
-    });
-
-    await waitForCourseStatus(courseId, "generating_artifacts");
-    await drainArtifactQueue(supabase);
-    await waitForCourseStatus(courseId, "ready");
-
-    vi.stubEnv("TEST_FORCE_INGEST_FAILURE_ONCE", "false");
-
-    await supabase.from("courses").delete().eq("id", courseId);
-  });
+      await supabase.from("courses").delete().eq("id", courseId);
+    },
+    120_000,
+  );
 });

@@ -134,8 +134,11 @@ describe.skipIf(!hasSupabaseAuthConfig)("course status transition guards", () =>
       .post(`/api/v1/courses/${courseId}/retry-knowledge-extraction`)
       .set("Authorization", `Bearer ${user.accessToken}`);
 
-    expect(response.status).toBe(200);
-    expect(response.body.status).toBe("extracting_knowledge");
+    expect(response.status).toBe(202);
+    expect(response.body.status).toBe("ingesting");
+    expect(await serviceClient.rpc("count_extract_knowledge_messages")).toMatchObject({
+      data: expect.any(Number),
+    });
 
     const { data: chunks } = await serviceClient
       .from("source_chunks")

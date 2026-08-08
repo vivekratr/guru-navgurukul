@@ -1,17 +1,17 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.47.10";
 
-import { getRetryBackoffSeconds } from "./backoff.ts";
-import { buildVisionIngestMessages, type SourceRecord } from "./content.ts";
-import { classifyIngestFailure } from "./failure.ts";
-import { decideIdempotency } from "./idempotency.ts";
-import { parseIngestQueueMessage } from "./message.ts";
+import { getRetryBackoffSeconds } from "../_shared/ingest/backoff.ts";
+import { buildVisionIngestMessages, type SourceRecord } from "../_shared/ingest/content.ts";
+import { classifyIngestFailure } from "../_shared/ingest/failure.ts";
+import { decideIdempotency } from "../_shared/ingest/idempotency.ts";
+import { parseIngestQueueMessage } from "../_shared/ingest/message.ts";
 import {
   callRole,
   type CallRoleDependencies,
   validateVisionIngestSemantics,
   visionIngestOutputSchema,
-} from "../llm/index.ts";
-import { INGEST_BATCH_SIZE } from "./constants.ts";
+} from "../_shared/llm/index.ts";
+import { INGEST_BATCH_SIZE } from "../_shared/ingest/constants.ts";
 
 export type QueueMessage = {
   msg_id: number;
