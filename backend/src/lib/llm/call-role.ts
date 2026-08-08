@@ -11,6 +11,7 @@ import {
 } from "./errors.js";
 import { loadModelRoleConfig } from "./model-role-repository.js";
 import { createOpenRouterClient } from "./openrouter-client.js";
+import { parseLlmJson } from "./parse-llm-json.js";
 import type {
   CallRoleResult,
   ChatMessage,
@@ -25,6 +26,7 @@ export type CallRoleParams<T> = {
   messages: ChatMessage[];
   outputSchema: z.ZodType<T>;
   validateOutput?: (data: T) => string | undefined;
+  normalizeParsed?: (parsed: unknown) => unknown;
 };
 
 export type CallRoleDependencies = {
@@ -118,11 +120,15 @@ export async function callRole<T>(
         messages: params.messages,
         max_tokens: config.max_tokens,
         timeout_ms: config.timeout_ms,
+        response_format: { type: "json_object" },
       });
 
       let parsed: unknown;
       try {
-        parsed = JSON.parse(response.content);
+        parsed = parseLlmJson(response.content);
+        if (params.normalizeParsed) {
+          parsed = params.normalizeParsed(parsed);
+        }
       } catch {
         recordAttempt(attempts, modelId, "invalid_output", "malformed JSON");
         continue;

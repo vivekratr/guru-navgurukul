@@ -1,24 +1,12 @@
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { PillTag } from "@/components/ui/PillTag";
 import { useRetrySource } from "@/features/sources/hooks";
 import type { CourseSource } from "@/types/api";
 import {
   sourceStatusLabel,
   sourceTypeLabel,
 } from "@/lib/status-labels";
-
-function statusClassName(status: string): string {
-  switch (status) {
-    case "failed":
-      return "text-amber-700";
-    case "failed_permanent":
-      return "text-red-700 font-medium";
-    case "done":
-      return "text-emerald-700";
-    case "processing":
-      return "text-blue-700";
-    default:
-      return "text-slate-600";
-  }
-}
 
 export function SourceItem({
   courseId,
@@ -28,35 +16,42 @@ export function SourceItem({
   source: CourseSource;
 }) {
   const retry = useRetrySource(courseId);
+  const isDone = source.status === "done";
+  const isFailed =
+    source.status === "failed" || source.status === "failed_permanent";
 
   return (
-    <li className="rounded-lg border border-slate-200 bg-white p-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="font-medium text-slate-900">
-            {sourceTypeLabel(source.type)} source
-          </p>
-          <p className="text-xs text-slate-500">{source.id.slice(0, 8)}…</p>
+    <li>
+      <Card className={isFailed ? "border-charcoal/35" : undefined}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-medium text-ink-black">
+              {sourceTypeLabel(source.type)} source
+            </p>
+            <p className="mt-1 font-micro text-caption text-charcoal">
+              {source.id.slice(0, 8)}…
+            </p>
+          </div>
+          <PillTag accent={isDone}>
+            {sourceStatusLabel(source.status)}
+          </PillTag>
         </div>
-        <p className={`text-sm ${statusClassName(source.status)}`}>
-          {sourceStatusLabel(source.status)}
-        </p>
-      </div>
 
-      {source.last_error && (
-        <p className="mt-2 text-sm text-red-600">{source.last_error}</p>
-      )}
+        {source.last_error && (
+          <p className="mt-3 text-body-sm text-charcoal">{source.last_error}</p>
+        )}
 
-      {source.status === "failed_permanent" && (
-        <button
-          type="button"
-          onClick={() => retry.mutate(source.id)}
-          disabled={retry.isPending}
-          className="mt-2 text-sm font-medium text-slate-900 underline"
-        >
-          {retry.isPending ? "Retrying…" : "Retry source"}
-        </button>
-      )}
+        {source.status === "failed_permanent" && (
+          <Button
+            variant="text"
+            className="mt-3 !p-0"
+            onClick={() => retry.mutate(source.id)}
+            disabled={retry.isPending}
+          >
+            {retry.isPending ? "Retrying…" : "Retry source"}
+          </Button>
+        )}
+      </Card>
     </li>
   );
 }

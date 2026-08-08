@@ -3,6 +3,24 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/features/auth/AuthContext";
 
+function LeafIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+      className="text-sage-mint"
+    >
+      <path
+        d="M10 2C6 6 4 10 4 14C8 12 12 10 16 8C14 6 12 4 10 2Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { signOut } = useAuth();
   const queryClient = useQueryClient();
@@ -15,30 +33,31 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <Link to="/courses" className="text-lg font-semibold text-slate-900">
+    <div className="min-h-screen bg-linen-canvas">
+      <header className="page-shell py-6">
+        <div className="flex items-center justify-between gap-6">
+          <Link
+            to="/courses"
+            className="flex items-center gap-2 font-display text-subheading-sm font-semibold text-ink-black"
+          >
+            <LeafIcon />
             NavGurukul
           </Link>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link
-              to="/courses"
-              className="text-slate-600 hover:text-slate-900"
-            >
+          <nav className="flex items-center gap-4 sm:gap-6">
+            <Link to="/courses" className="nav-link">
               Courses
             </Link>
             <button
               type="button"
               onClick={() => handleLogout()}
-              className="text-slate-600 hover:text-slate-900"
+              className="nav-link cursor-pointer bg-transparent"
             >
               Log out
             </button>
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <main className="page-shell pb-section pt-4">{children}</main>
     </div>
   );
 }

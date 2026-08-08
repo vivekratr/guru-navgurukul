@@ -51,6 +51,9 @@ export function createOpenRouterClient(apiKey: string): OpenRouterClient {
             model: request.model,
             messages: request.messages,
             max_tokens: request.max_tokens,
+            ...(request.response_format
+              ? { response_format: request.response_format }
+              : {}),
           }),
           signal: controller.signal,
         });

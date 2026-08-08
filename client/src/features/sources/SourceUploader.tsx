@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/StateMessages";
 import {
   type FileSourcePayload,
@@ -129,9 +131,11 @@ export function SourceUploader({ courseId }: { courseId: string }) {
   );
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <h3 className="font-medium text-slate-900">Upload file source</h3>
-      <p className="mt-1 text-sm text-slate-600">
+    <Card>
+      <h3 className="font-display text-subheading-sm font-semibold text-ink-black">
+        Upload file source
+      </h3>
+      <p className="body-copy-muted mt-2">
         PDF documents, images, or short videos (max 180s).
       </p>
 
@@ -142,51 +146,51 @@ export function SourceUploader({ courseId }: { courseId: string }) {
         multiple
         onChange={handleFileChange}
         disabled={isBusy}
-        className="mt-3 block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-700"
+        className="mt-6 block w-full cursor-pointer text-body-sm text-charcoal file:mr-4 file:cursor-pointer file:rounded-button file:border file:border-ink-black file:bg-transparent file:px-5 file:py-2 file:text-body-sm file:font-medium file:text-ink-black"
       />
 
       {uploads.length > 0 && (
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-6 space-y-3">
           {uploads.map((upload) => (
             <li
               key={upload.id}
-              className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm"
+              className="rounded-card border border-charcoal/15 bg-pure-white p-4 text-body-sm"
             >
               <div className="flex items-start justify-between gap-3">
-                <p className="font-medium text-slate-900">{upload.file.name}</p>
-                <button
-                  type="button"
+                <p className="font-medium text-ink-black">{upload.file.name}</p>
+                <Button
+                  variant="text"
+                  className="!p-0 !text-caption"
                   onClick={() => removeUpload(upload.id)}
-                  className="text-xs text-slate-500 hover:text-slate-800"
                   disabled={
                     upload.state === "uploading" ||
                     upload.state === "registering"
                   }
                 >
                   Remove
-                </button>
+                </Button>
               </div>
 
               {upload.state === "uploading" && (
-                <p className="mt-1 text-slate-600">Uploading…</p>
+                <p className="mt-2 text-charcoal">Uploading…</p>
               )}
 
               {upload.state === "registering" && (
-                <p className="mt-1 text-slate-600">Registering source…</p>
+                <p className="mt-2 text-charcoal">Registering source…</p>
               )}
 
               {upload.state === "done" && (
-                <p className="mt-1 text-emerald-700">Upload successful.</p>
+                <p className="mt-2 text-ink-black">Upload successful.</p>
               )}
 
               {upload.state === "failed" && (
-                <div className="mt-2">
+                <div className="mt-3">
                   <ErrorMessage
                     error={upload.error}
                     onRetry={() => retryUpload(upload)}
                   />
                   {upload.failedStep === "register" && (
-                    <p className="mt-1 text-xs text-slate-600">
+                    <p className="mt-2 text-caption text-charcoal">
                       File is already in storage — retry will register the
                       source without re-uploading.
                     </p>
@@ -197,6 +201,6 @@ export function SourceUploader({ courseId }: { courseId: string }) {
           ))}
         </ul>
       )}
-    </div>
+    </Card>
   );
 }

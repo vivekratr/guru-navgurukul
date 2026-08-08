@@ -7,6 +7,7 @@ import {
   type Node,
 } from "@xyflow/react";
 
+import { Card } from "@/components/ui/Card";
 import {
   EmptyState,
   ErrorMessage,
@@ -95,11 +96,13 @@ export function ConceptGraph({
   }
 
   return (
-    <div className="h-[480px] w-full rounded-xl border border-slate-200 bg-white">
-      <ReactFlow nodes={flowNodes} edges={flowEdges} fitView>
-        <Background />
-        <Controls />
-      </ReactFlow>
-    </div>
+    <Card className="overflow-hidden !p-0">
+      <div className="h-[480px] w-full bg-pure-white">
+        <ReactFlow nodes={flowNodes} edges={flowEdges} fitView>
+          <Background color="#333333" gap={20} size={1} />
+          <Controls />
+        </ReactFlow>
+      </div>
+    </Card>
   );
 }

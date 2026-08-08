@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { FieldLabel, FieldTextarea } from "@/components/ui/Field";
 import { ErrorMessage } from "@/components/ui/StateMessages";
 import { useCreateTextSource } from "@/features/sources/hooks";
 import { textSourceSchema } from "@/schemas/forms";
@@ -29,39 +32,45 @@ export function TextSourceForm({ courseId }: { courseId: string }) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-lg border border-slate-200 bg-white p-4"
-    >
-      <h3 className="font-medium text-slate-900">Add text source</h3>
-      <textarea
-        value={rawText}
-        onChange={(event) => setRawText(event.target.value)}
-        rows={5}
-        className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-        placeholder="Paste or type learning content…"
-      />
+    <Card>
+      <h3 className="font-display text-subheading-sm font-semibold text-ink-black">
+        Add text source
+      </h3>
+      <p className="body-copy-muted mt-2">
+        Paste or type learning content directly.
+      </p>
 
-      {validationError && (
-        <p className="mt-2 text-sm text-red-600">{validationError}</p>
-      )}
+      <form onSubmit={handleSubmit} className="mt-6">
+        <FieldLabel htmlFor="text-source">Content</FieldLabel>
+        <FieldTextarea
+          id="text-source"
+          value={rawText}
+          onChange={(event) => setRawText(event.target.value)}
+          rows={5}
+          placeholder="Paste or type learning content…"
+        />
 
-      {createText.isError && (
-        <div className="mt-2">
-          <ErrorMessage
-            error={createText.error}
-            onRetry={() => createText.reset()}
-          />
-        </div>
-      )}
+        {validationError && (
+          <p className="mt-2 text-body-sm text-charcoal">{validationError}</p>
+        )}
 
-      <button
-        type="submit"
-        disabled={createText.isPending}
-        className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-      >
-        {createText.isPending ? "Adding…" : "Add text source"}
-      </button>
-    </form>
+        {createText.isError && (
+          <div className="mt-4">
+            <ErrorMessage
+              error={createText.error}
+              onRetry={() => createText.reset()}
+            />
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          disabled={createText.isPending}
+          className="mt-4"
+        >
+          {createText.isPending ? "Adding…" : "Add text source"}
+        </Button>
+      </form>
+    </Card>
   );
 }

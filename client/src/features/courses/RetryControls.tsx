@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { useRetryArtifact, useRetryKnowledge } from "@/features/courses/hooks";
 import type { CourseDetail } from "@/types/api";
 
@@ -19,52 +21,58 @@ export function RetryControls({ course }: { course: CourseDetail }) {
   }
 
   return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-      <h3 className="font-medium text-amber-900">Retry options</h3>
+    <Card className="border-charcoal/30 bg-sage-mint/15">
+      <h3 className="font-display text-subheading-sm font-semibold text-ink-black">
+        Retry options
+      </h3>
 
       {course.status === "knowledge_extraction_failed" && (
-        <div className="mt-3">
-          <p className="text-sm text-amber-800">
+        <div className="mt-4">
+          <p className="text-body-sm text-charcoal">
             Knowledge extraction failed. Retry without re-uploading sources.
           </p>
-          <button
-            type="button"
+          <Button
+            variant="text"
+            className="mt-2 !p-0"
             onClick={() => retryKnowledge.mutate()}
             disabled={retryKnowledge.isPending}
-            className="mt-2 text-sm font-medium text-amber-900 underline"
           >
-            {retryKnowledge.isPending ? "Retrying…" : "Retry knowledge extraction"}
-          </button>
+            {retryKnowledge.isPending
+              ? "Retrying…"
+              : "Retry knowledge extraction"}
+          </Button>
         </div>
       )}
 
       {flashcardsFailed && (
-        <div className="mt-3">
-          <p className="text-sm text-amber-800">Flashcard generation failed.</p>
-          <button
-            type="button"
+        <div className="mt-4">
+          <p className="text-body-sm text-charcoal">
+            Flashcard generation failed.
+          </p>
+          <Button
+            variant="text"
+            className="mt-2 !p-0"
             onClick={() => retryFlashcards.mutate()}
             disabled={retryFlashcards.isPending}
-            className="mt-2 text-sm font-medium text-amber-900 underline"
           >
             {retryFlashcards.isPending ? "Retrying…" : "Retry flashcards"}
-          </button>
+          </Button>
         </div>
       )}
 
       {summaryFailed && (
-        <div className="mt-3">
-          <p className="text-sm text-amber-800">Summary generation failed.</p>
-          <button
-            type="button"
+        <div className="mt-4">
+          <p className="text-body-sm text-charcoal">Summary generation failed.</p>
+          <Button
+            variant="text"
+            className="mt-2 !p-0"
             onClick={() => retrySummary.mutate()}
             disabled={retrySummary.isPending}
-            className="mt-2 text-sm font-medium text-amber-900 underline"
           >
             {retrySummary.isPending ? "Retrying…" : "Retry summary"}
-          </button>
+          </Button>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

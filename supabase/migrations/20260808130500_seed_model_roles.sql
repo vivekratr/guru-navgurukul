@@ -4,19 +4,19 @@
 insert into public.model_roles (role, chain, max_tokens, timeout_ms) values
   (
     'vision_ingest',
-    '["google/gemini-2.5-flash:free", "qwen/qwen3.7-flash:free"]'::jsonb,
+    '["google/gemini-2.5-flash", "qwen/qwen-2.5-7b-instruct"]'::jsonb,
     4000,
     30000
   ),
   (
     'knowledge_extraction',
-    '["google/gemini-2.5-flash:free", "<qwen-text-model>:free"]'::jsonb,
+    '["google/gemini-2.5-flash", "meta-llama/llama-3.1-8b-instruct"]'::jsonb,
     8000,
     45000
   ),
   (
     'content_generation',
-    '["<groq-model>:free", "google/gemini-2.5-flash:free"]'::jsonb,
+    '["google/gemini-2.5-flash", "openai/gpt-4o-mini"]'::jsonb,
     6000,
     30000
   );

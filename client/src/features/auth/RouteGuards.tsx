@@ -8,7 +8,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   if (loading) {
-    return <LoadingMessage>Restoring session…</LoadingMessage>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-linen-canvas px-6">
+        <LoadingMessage>Restoring session…</LoadingMessage>
+      </div>
+    );
   }
 
   if (!session) {
@@ -22,7 +26,11 @@ export function GuestRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
 
   if (loading) {
-    return <LoadingMessage>Loading…</LoadingMessage>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-linen-canvas px-6">
+        <LoadingMessage>Loading…</LoadingMessage>
+      </div>
+    );
   }
 
   if (session) {

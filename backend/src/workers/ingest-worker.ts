@@ -67,7 +67,7 @@ async function defaultCallVisionIngest(
         {
           role: "system",
           content:
-            "Return JSON with chunks: [{ heading?, text, position }]. At least one non-empty chunk.",
+            'Return only valid JSON in this exact shape: {"chunks":[{"heading":"optional","text":"chunk body","position":0}]}. Include at least one non-empty chunk. Do not wrap the response in markdown.',
         },
         {
           role: "user",
@@ -76,6 +76,8 @@ async function defaultCallVisionIngest(
       ],
       outputSchema: visionIngestOutputSchema,
       validateOutput: validateVisionIngestSemantics,
+      normalizeParsed: (parsed) =>
+        Array.isArray(parsed) ? { chunks: parsed } : parsed,
     },
     deps,
   );

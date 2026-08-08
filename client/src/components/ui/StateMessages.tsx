@@ -1,8 +1,12 @@
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { ApiClientError } from "@/lib/api-error";
 
 export function LoadingMessage({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-sm text-slate-600" role="status">{children}</p>
+    <p className="body-copy-muted" role="status">
+      {children}
+    </p>
   );
 }
 
@@ -24,21 +28,14 @@ export function ErrorMessage({
     error instanceof ApiClientError ? error.retryable : Boolean(onRetry);
 
   return (
-    <div
-      className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
-      role="alert"
-    >
-      <p>{message}</p>
+    <Card className="border-charcoal/30" role="alert">
+      <p className="text-body-sm text-ink-black">{message}</p>
       {retryable && onRetry && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="mt-2 font-medium text-red-900 underline"
-        >
+        <Button variant="text" className="mt-3 !p-0" onClick={onRetry}>
           Retry
-        </button>
+        </Button>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -50,11 +47,11 @@ export function EmptyState({
   description?: string;
 }) {
   return (
-    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center">
-      <p className="font-medium text-slate-800">{title}</p>
+    <Card className="border-dashed border-charcoal/25 text-center">
+      <p className="text-subheading-sm font-medium text-ink-black">{title}</p>
       {description && (
-        <p className="mt-1 text-sm text-slate-600">{description}</p>
+        <p className="body-copy-muted mx-auto mt-2">{description}</p>
       )}
-    </div>
+    </Card>
   );
 }

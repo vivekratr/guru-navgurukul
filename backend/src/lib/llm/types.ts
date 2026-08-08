@@ -27,6 +27,7 @@ export type ChatCompletionRequest = {
   messages: ChatMessage[];
   max_tokens: number;
   timeout_ms: number;
+  response_format?: { type: "json_object" };
 };
 
 export type ChatCompletionResponse = {

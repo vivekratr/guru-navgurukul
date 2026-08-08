@@ -1,3 +1,4 @@
+import { PillTag } from "@/components/ui/PillTag";
 import type { RealtimeConnectionStatus } from "@/lib/realtime";
 
 export function NetworkStatusBanner({
@@ -15,10 +16,7 @@ export function NetworkStatusBanner({
 
   if (!isOnline) {
     return (
-      <p
-        className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
-        role="status"
-      >
+      <p className="status-banner-warn" role="status">
         Offline — reconnecting…
       </p>
     );
@@ -26,10 +24,7 @@ export function NetworkStatusBanner({
 
   if (courseProcessing && realtimeStatus !== "connected") {
     return (
-      <p
-        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-        role="status"
-      >
+      <p className="status-banner" role="status">
         Live updates unavailable — checking status periodically.
       </p>
     );
@@ -40,10 +35,7 @@ export function NetworkStatusBanner({
 
 export function StaleDataBanner() {
   return (
-    <p
-      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
-      role="status"
-    >
+    <p className="status-banner-warn" role="status">
       Unable to refresh right now. Showing last known state.
     </p>
   );
@@ -58,13 +50,15 @@ export function LiveStatusHint({
 }) {
   if (isShowingStaleData) {
     return (
-      <p className="text-xs text-amber-800" role="status">Last known state</p>
+      <PillTag role="status">Last known state</PillTag>
     );
   }
 
   if (isLive) {
     return (
-      <p className="text-xs text-emerald-700" role="status">Live</p>
+      <PillTag accent role="status">
+        Live
+      </PillTag>
     );
   }
 

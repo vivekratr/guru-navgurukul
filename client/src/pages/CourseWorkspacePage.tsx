@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { LeafDecoration } from "@/components/ui/LeafDecoration";
 import {
   LiveStatusHint,
   NetworkStatusBanner,
@@ -61,24 +62,25 @@ export function CourseWorkspacePage() {
   const courseProcessing = isCourseProcessing(course.status);
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-12">
+      <header>
         <Link
           to="/courses"
-          className="text-sm text-slate-600 hover:text-slate-900"
+          className="text-body-sm font-medium text-charcoal underline decoration-charcoal/30 underline-offset-4 transition-colors hover:text-ink-black hover:decoration-ink-black"
         >
           ← Back to courses
         </Link>
-        <div className="mt-2 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold text-slate-900">
-            {course.title}
-          </h1>
-          <LiveStatusHint
-            isLive={isLive}
-            isShowingStaleData={isShowingStaleData}
-          />
+        <div className="relative mt-8">
+          <LeafDecoration className="absolute -right-4 top-0 hidden h-16 w-24 opacity-60 md:block" />
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <h1 className="section-heading max-w-3xl">{course.title}</h1>
+            <LiveStatusHint
+              isLive={isLive}
+              isShowingStaleData={isShowingStaleData}
+            />
+          </div>
         </div>
-      </div>
+      </header>
 
       <NetworkStatusBanner
         isOnline={isOnline}
@@ -88,14 +90,17 @@ export function CourseWorkspacePage() {
 
       {isShowingStaleData && <StaleDataBanner />}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-element md:grid-cols-2">
         <CourseStatusBadge status={course.status} />
         <GenerationProgress course={course} />
       </div>
 
       <RetryControls course={course} />
 
-      <nav className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+      <nav
+        className="flex flex-wrap gap-element border-b border-charcoal/15 pb-4"
+        aria-label="Course workspace"
+      >
         {TABS.map((tab) => {
           const artifactStatus =
             tab.id === "flashcards"
@@ -113,15 +118,15 @@ export function CourseWorkspacePage() {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                activeTab === tab.id
-                  ? "bg-slate-900 text-white"
-                  : "bg-white text-slate-700 hover:bg-slate-100"
-              }`}
+              className={
+                activeTab === tab.id ? "tab-pill-active" : "tab-pill"
+              }
             >
               {tab.label}
               {failedArtifact && contentUnlocked && (
-                <span className="ml-1 text-amber-400">!</span>
+                <span className="ml-1.5" aria-label="needs attention">
+                  ·
+                </span>
               )}
             </button>
           );
@@ -129,7 +134,7 @@ export function CourseWorkspacePage() {
       </nav>
 
       {activeTab === "sources" && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {course.status === "draft" && (
             <>
               <TextSourceForm courseId={course.id} />

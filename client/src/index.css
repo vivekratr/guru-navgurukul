@@ -1,7 +1,126 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Rubik:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+@layer base {
+  :root {
+    --color-linen-canvas: #edede2;
+    --color-bone-card: #fffff3;
+    --color-pure-white: #ffffff;
+    --color-ink-black: #000000;
+    --color-charcoal: #333333;
+    --color-sage-mint: #beedc0;
+    --page-max-width: 1200px;
+    --section-gap: 120px;
+    --card-padding: 20px;
+    --element-gap: 14px;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-linen-canvas font-sans text-body text-ink-black antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display font-semibold text-ink-black;
+  }
+
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ink-black;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-page px-6;
+  }
+
+  .display-heading {
+    @apply font-display text-[2.5rem] font-semibold leading-[1.4] text-ink-black sm:text-heading lg:text-display;
+  }
+
+  .section-heading {
+    @apply font-display text-[2rem] font-semibold leading-[1.48] text-ink-black sm:text-heading;
+  }
+
+  .body-copy {
+    @apply max-w-prose text-body font-normal leading-[1.9] text-ink-black;
+  }
+
+  .body-copy-muted {
+    @apply max-w-prose text-body-sm font-normal leading-[1.9] text-charcoal;
+  }
+
+  .card-surface {
+    @apply rounded-card border border-charcoal/20 bg-bone-card p-card;
+  }
+
+  .btn-primary {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-button border border-ink-black bg-ink-black px-7 py-3.5 text-[17px] font-medium text-pure-white transition-colors duration-200 hover:bg-charcoal disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-button border border-ink-black bg-transparent px-7 py-3.5 text-[17px] font-medium text-ink-black transition-colors duration-200 hover:bg-ink-black/5 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-text {
+    @apply cursor-pointer text-body-sm font-medium text-ink-black underline decoration-charcoal/40 underline-offset-4 transition-colors duration-200 hover:decoration-ink-black disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .field-label {
+    @apply block text-body-sm font-medium text-ink-black;
+  }
+
+  .field-input {
+    @apply mt-2 w-full rounded-input border border-charcoal/30 bg-pure-white px-4 py-3 text-body-sm text-ink-black placeholder:text-charcoal/50 transition-colors duration-200 focus:border-ink-black focus:outline-none;
+  }
+
+  .pill-tag {
+    @apply inline-flex items-center rounded-tag border border-charcoal/25 bg-bone-card px-4 py-1.5 text-caption font-semibold text-ink-black;
+  }
+
+  .pill-tag-accent {
+    @apply inline-flex items-center rounded-tag bg-sage-mint/40 px-4 py-1.5 text-caption font-semibold text-ink-black;
+  }
+
+  .nav-link {
+    @apply text-body-sm font-medium text-charcoal transition-colors duration-200 hover:text-ink-black;
+  }
+
+  .tab-pill {
+    @apply cursor-pointer rounded-button border border-charcoal/20 bg-bone-card px-5 py-2.5 text-body-sm font-medium text-charcoal transition-colors duration-200 hover:border-charcoal/40 hover:text-ink-black;
+  }
+
+  .tab-pill-active {
+    @apply cursor-pointer rounded-button border border-ink-black bg-ink-black px-5 py-2.5 text-body-sm font-medium text-pure-white;
+  }
+
+  .status-banner {
+    @apply rounded-card border border-charcoal/20 bg-bone-card px-4 py-3 text-body-sm text-charcoal;
+  }
+
+  .status-banner-warn {
+    @apply rounded-card border border-charcoal/30 bg-sage-mint/25 px-4 py-3 text-body-sm text-ink-black;
+  }
+
+  .announcement-bar {
+    @apply bg-ink-black px-4 py-3 text-center text-body-sm text-pure-white;
+  }
 }

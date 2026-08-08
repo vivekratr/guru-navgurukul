@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui/Card";
+import { PillTag } from "@/components/ui/PillTag";
 import type { CourseDetail } from "@/types/api";
 import {
   artifactStatusLabel,
@@ -6,20 +8,20 @@ import {
   sourceTypeLabel,
 } from "@/lib/status-labels";
 
-function sourceProgressIcon(status: string): string {
+function sourceProgressLabel(status: string): string {
   switch (status) {
     case "done":
-      return "✓";
+      return "Done";
     case "processing":
-      return "⟳";
+      return "Processing";
     case "failed":
-      return "⚠";
+      return "Failed";
     case "failed_permanent":
-      return "✗";
+      return "Failed permanently";
     case "cancelled":
-      return "—";
+      return "Cancelled";
     default:
-      return "○";
+      return "Pending";
   }
 }
 
@@ -28,31 +30,38 @@ export function GenerationProgress({ course }: { course: CourseDetail }) {
   const totalCount = course.sources.length;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <p className="text-sm font-medium text-slate-500">Generation progress</p>
-      <p className="mt-1 font-semibold text-slate-900">
+    <Card>
+      <p className="text-caption font-medium uppercase tracking-wide text-charcoal">
+        Generation progress
+      </p>
+      <p className="mt-2 font-display text-subheading-sm font-semibold text-ink-black">
         {courseStatusLabel(course.status)}
       </p>
 
       {course.last_error && (
-        <p className="mt-2 text-sm text-red-600">{course.last_error}</p>
+        <p className="mt-3 text-body-sm text-charcoal">{course.last_error}</p>
       )}
 
       {course.status === "ingesting" && totalCount > 0 && (
-        <div className="mt-4 space-y-2">
-          <p className="text-sm text-slate-600">
+        <div className="mt-6 space-y-4">
+          <p className="text-body-sm text-charcoal">
             {doneCount} of {totalCount} sources processed
           </p>
-          <ul className="space-y-1 text-sm">
+          <ul className="space-y-2">
             {course.sources.map((source) => (
-              <li key={source.id} className="flex items-center gap-2">
-                <span aria-hidden="true">
-                  {sourceProgressIcon(source.status)}
-                </span>
-                <span className="text-slate-800">
+              <li
+                key={source.id}
+                className="flex flex-wrap items-center gap-2 text-body-sm"
+              >
+                <span className="font-medium text-ink-black">
                   {sourceTypeLabel(source.type)}
                 </span>
-                <span className="text-slate-500">
+                <PillTag
+                  accent={source.status === "done"}
+                >
+                  {sourceProgressLabel(source.status)}
+                </PillTag>
+                <span className="sr-only">
                   {sourceStatusLabel(source.status)}
                 </span>
               </li>
@@ -62,23 +71,26 @@ export function GenerationProgress({ course }: { course: CourseDetail }) {
       )}
 
       {course.status === "generating_artifacts" && (
-        <div className="mt-4 space-y-2 text-sm">
+        <div className="mt-6 space-y-3">
           {(["flashcards", "summary"] as const).map((artifact) => {
             const status = course.artifact_status[artifact] ?? "pending";
 
             return (
-              <div key={artifact} className="flex items-center justify-between">
-                <span className="font-medium capitalize text-slate-800">
+              <div
+                key={artifact}
+                className="flex items-center justify-between gap-4 text-body-sm"
+              >
+                <span className="font-medium capitalize text-ink-black">
                   {artifact}
                 </span>
-                <span className="text-slate-600">
+                <PillTag accent={status === "done"}>
                   {artifactStatusLabel(status)}
-                </span>
+                </PillTag>
               </div>
             );
           })}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import {
   EmptyState,
   ErrorMessage,
@@ -18,22 +20,22 @@ export function FlashcardCard({
   const [showAnswer, setShowAnswer] = useState(false);
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-lg font-medium text-slate-900">{front}</p>
+    <Card className="min-h-[200px]">
+      <p className="font-display text-subheading-sm font-semibold text-ink-black">
+        {front}
+      </p>
       {showAnswer ? (
-        <p className="mt-4 border-t border-slate-100 pt-4 text-slate-700">
-          {back}
-        </p>
+        <p className="body-copy mt-6 border-t border-charcoal/15 pt-6">{back}</p>
       ) : (
-        <button
-          type="button"
+        <Button
+          variant="text"
+          className="mt-6 !p-0"
           onClick={() => setShowAnswer(true)}
-          className="mt-4 text-sm font-medium text-slate-900 underline"
         >
           Show answer
-        </button>
+        </Button>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -86,32 +88,32 @@ export function FlashcardList({
   const current = flashcards[index];
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-2xl space-y-6">
       <FlashcardCard front={current.front} back={current.back} />
 
-      <div className="flex items-center justify-between text-sm text-slate-600">
+      <div className="flex flex-wrap items-center justify-between gap-4 text-body-sm text-charcoal">
         <span>
           Card {index + 1} of {flashcards.length}
         </span>
-        <div className="flex gap-2">
-          <button
-            type="button"
+        <div className="flex gap-3">
+          <Button
+            variant="ghost"
+            className="!px-5 !py-2 !text-body-sm"
             onClick={() => setIndex((value) => Math.max(0, value - 1))}
             disabled={index === 0}
-            className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-50"
           >
             Previous
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            className="!px-5 !py-2 !text-body-sm"
             onClick={() =>
               setIndex((value) => Math.min(flashcards.length - 1, value + 1))
             }
             disabled={index >= flashcards.length - 1}
-            className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-50"
           >
             Next
-          </button>
+          </Button>
         </div>
       </div>
     </div>

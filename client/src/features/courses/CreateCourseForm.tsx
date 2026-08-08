@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { FieldInput, FieldLabel } from "@/components/ui/Field";
 import { ErrorMessage } from "@/components/ui/StateMessages";
 import { useCreateCourse } from "@/features/courses/hooks";
 import { createCourseSchema } from "@/schemas/forms";
@@ -31,42 +34,45 @@ export function CreateCourseForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-    >
-      <h2 className="font-semibold text-slate-900">Create course</h2>
-      <label className="mt-3 block">
-        <span className="text-sm text-slate-700">Course title</span>
-        <input
+    <Card className="mx-auto max-w-2xl">
+      <h2 className="font-display text-subheading font-semibold text-ink-black">
+        Create course
+      </h2>
+      <p className="body-copy-muted mt-2">
+        Give your course a clear title — you can add sources next.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-6">
+        <FieldLabel htmlFor="course-title">Course title</FieldLabel>
+        <FieldInput
+          id="course-title"
           type="text"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           placeholder="React Hooks Fundamentals"
         />
-      </label>
 
-      {validationError && (
-        <p className="mt-2 text-sm text-red-600">{validationError}</p>
-      )}
+        {validationError && (
+          <p className="mt-2 text-body-sm text-charcoal">{validationError}</p>
+        )}
 
-      {createCourse.isError && (
-        <div className="mt-2">
-          <ErrorMessage
-            error={createCourse.error}
-            onRetry={() => createCourse.reset()}
-          />
-        </div>
-      )}
+        {createCourse.isError && (
+          <div className="mt-4">
+            <ErrorMessage
+              error={createCourse.error}
+              onRetry={() => createCourse.reset()}
+            />
+          </div>
+        )}
 
-      <button
-        type="submit"
-        disabled={createCourse.isPending}
-        className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-      >
-        {createCourse.isPending ? "Creating…" : "Create course"}
-      </button>
-    </form>
+        <Button
+          type="submit"
+          disabled={createCourse.isPending}
+          className="mt-6"
+        >
+          {createCourse.isPending ? "Creating…" : "Create course"}
+        </Button>
+      </form>
+    </Card>
   );
 }

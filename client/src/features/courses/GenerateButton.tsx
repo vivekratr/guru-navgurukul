@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/StateMessages";
 import { useGenerateCourse } from "@/features/courses/hooks";
 import type { CourseDetail } from "@/types/api";
@@ -10,35 +12,36 @@ export function GenerateButton({ course }: { course: CourseDetail }) {
   const isProcessing = course.status !== "draft";
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <h3 className="font-medium text-slate-900">Generate course content</h3>
-      <p className="mt-1 text-sm text-slate-600">
+    <Card>
+      <h3 className="font-display text-subheading-sm font-semibold text-ink-black">
+        Generate course content
+      </h3>
+      <p className="body-copy-muted mt-2">
         Start ingestion and content generation for all pending sources.
       </p>
 
-      <button
-        type="button"
+      <Button
+        className="mt-6"
         onClick={() => generate.mutate()}
         disabled={!canGenerate || isProcessing || generate.isPending}
-        className="mt-4 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {generate.isPending ? "Starting…" : "Generate"}
-      </button>
+      </Button>
 
       {!hasUsableSources(course.sources) && course.status === "draft" && (
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-3 text-body-sm text-charcoal">
           Add at least one source before generating.
         </p>
       )}
 
       {generate.isError && (
-        <div className="mt-3">
+        <div className="mt-4">
           <ErrorMessage
             error={generate.error}
             onRetry={() => generate.mutate()}
           />
         </div>
       )}
-    </div>
+    </Card>
   );
 }

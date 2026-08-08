@@ -50,14 +50,18 @@ export function SummaryView({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-prose space-y-12">
       <section>
-        <h3 className="text-lg font-semibold text-slate-900">Short summary</h3>
-        <p className="mt-2 leading-relaxed text-slate-700">{data.short}</p>
+        <h3 className="font-display text-subheading-sm font-semibold text-ink-black">
+          Short summary
+        </h3>
+        <p className="body-copy mt-4">{data.short}</p>
       </section>
       <section>
-        <h3 className="text-lg font-semibold text-slate-900">Detailed summary</h3>
-        <p className="mt-2 leading-relaxed text-slate-700">{data.detailed}</p>
+        <h3 className="font-display text-subheading-sm font-semibold text-ink-black">
+          Detailed summary
+        </h3>
+        <p className="body-copy mt-4">{data.detailed}</p>
       </section>
     </div>
   );
