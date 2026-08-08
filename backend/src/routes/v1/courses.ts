@@ -2,12 +2,14 @@ import type { NextFunction, Request, Response, RequestHandler } from "express";
 import { Router } from "express";
 
 import { requireAuth } from "../../middleware/require-auth.js";
+import { flashcardExportQuerySchema } from "../../schemas/artifact-read.js";
 import {
   courseIdParamSchema,
   createCourseBodySchema,
 } from "../../schemas/course.js";
 import * as courseService from "../../services/course-service.js";
 import * as generationService from "../../services/generation-service.js";
+import * as readService from "../../services/read-service.js";
 
 function asyncHandler(
   handler: (req: Request, res: Response) => Promise<void>,
@@ -40,6 +42,76 @@ coursesRouter.get(
   asyncHandler(async (req, res) => {
     const result = await courseService.listCourses(req.supabase!);
     res.json(result);
+  }),
+);
+
+coursesRouter.get(
+  "/:id/summary",
+  asyncHandler(async (req, res) => {
+    const courseId = courseIdParamSchema.parse(req.params.id);
+    const summary = await readService.getCourseSummary(req.supabase!, courseId);
+    res.json(summary);
+  }),
+);
+
+coursesRouter.get(
+  "/:id/flashcards/export",
+  asyncHandler(async (req, res) => {
+    const courseId = courseIdParamSchema.parse(req.params.id);
+    const { format } = flashcardExportQuerySchema.parse(req.query);
+
+    if (format === "json") {
+      const exported = await readService.exportCourseFlashcardsJson(
+        req.supabase!,
+        courseId,
+      );
+
+      res
+        .type("application/json")
+        .set(
+          "Content-Disposition",
+          `attachment; filename="${exported.filename}"`,
+        )
+        .send(exported.body);
+      return;
+    }
+
+    const exported = await readService.exportCourseFlashcardsCsv(
+      req.supabase!,
+      courseId,
+    );
+
+    res
+      .type("text/csv")
+      .set(
+        "Content-Disposition",
+        `attachment; filename="${exported.filename}"`,
+      )
+      .send(exported.body);
+  }),
+);
+
+coursesRouter.get(
+  "/:id/flashcards",
+  asyncHandler(async (req, res) => {
+    const courseId = courseIdParamSchema.parse(req.params.id);
+    const flashcards = await readService.getCourseFlashcards(
+      req.supabase!,
+      courseId,
+    );
+    res.json(flashcards);
+  }),
+);
+
+coursesRouter.get(
+  "/:id/concept-graph",
+  asyncHandler(async (req, res) => {
+    const courseId = courseIdParamSchema.parse(req.params.id);
+    const graph = await readService.getCourseConceptGraph(
+      req.supabase!,
+      courseId,
+    );
+    res.json(graph);
   }),
 );
 
