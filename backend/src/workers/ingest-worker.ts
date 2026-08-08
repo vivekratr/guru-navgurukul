@@ -202,6 +202,13 @@ export async function processIngestMessage(
   const callVision = workerDeps.callVisionIngest ?? defaultCallVisionIngest;
 
   try {
+    if (
+      process.env.TEST_FORCE_INGEST_FAILURE_ONCE === "true" &&
+      Number(activeSource.attempt_count ?? 1) <= 1
+    ) {
+      throw new Error("TEST_FORCE_INGEST_FAILURE_ONCE");
+    }
+
     const result = await callVision(supabase, activeSource, workerDeps.callRoleDeps);
 
     const { error } = await supabase.rpc("complete_source_ingestion", {

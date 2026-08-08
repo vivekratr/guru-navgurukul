@@ -29,6 +29,10 @@ const envSchema = z.object({
     emptyToUndefined,
     z.string().url().optional(),
   ),
+  TEST_FORCE_INGEST_FAILURE_ONCE: z.preprocess(
+    (value) => value === "true" || value === true,
+    z.boolean().default(false),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;

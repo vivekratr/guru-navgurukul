@@ -29,6 +29,14 @@ describe("ingest worker unit logic", () => {
   it("marks the fourth attempt as permanent", () => {
     expect(isPermanentFailure(3)).toBe(false);
     expect(isPermanentFailure(4)).toBe(true);
+    expect(isPermanentFailure(0)).toBe(false);
+    expect(isPermanentFailure(100)).toBe(true);
+  });
+
+  it("never returns negative backoff delays", () => {
+    for (let attempt = -5; attempt <= 10; attempt += 1) {
+      expect(getRetryBackoffSeconds(attempt)).toBeGreaterThanOrEqual(0);
+    }
   });
 
   it("skips done, cancelled, and failed_permanent sources", () => {
