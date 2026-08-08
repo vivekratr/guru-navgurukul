@@ -1,38 +1,132 @@
 import { useRef, useState } from "react";
 
 import { ErrorMessage } from "@/components/ui/StateMessages";
-import { useUploadFileSource } from "@/features/sources/hooks";
+import {
+  type FileSourcePayload,
+  uploadFileToStorage,
+  useRegisterFileSource,
+} from "@/features/sources/hooks";
 
-type UploadState = "idle" | "uploading" | "success" | "error";
+type UploadUiState =
+  | "idle"
+  | "uploading"
+  | "uploaded"
+  | "registering"
+  | "done"
+  | "failed";
+
+type PendingUpload = {
+  id: string;
+  file: File;
+  state: UploadUiState;
+  error: unknown;
+  storagePayload: FileSourcePayload | null;
+  failedStep: "upload" | "register" | null;
+};
+
+function createPendingUpload(file: File): PendingUpload {
+  return {
+    id: crypto.randomUUID(),
+    file,
+    state: "uploading",
+    error: null,
+    storagePayload: null,
+    failedStep: null,
+  };
+}
 
 export function SourceUploader({ courseId }: { courseId: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploadState, setUploadState] = useState<UploadState>("idle");
-  const [error, setError] = useState<unknown>(null);
-  const upload = useUploadFileSource(courseId);
+  const [uploads, setUploads] = useState<PendingUpload[]>([]);
+  const registerSource = useRegisterFileSource(courseId);
+
+  function updateUpload(id: string, patch: Partial<PendingUpload>) {
+    setUploads((current) =>
+      current.map((item) =>
+        item.id === id ? { ...item, ...patch } : item,
+      ),
+    );
+  }
+
+  function removeUpload(id: string) {
+    setUploads((current) => current.filter((item) => item.id !== id));
+  }
+
+  async function registerStoredFile(
+    uploadId: string,
+    payload: FileSourcePayload,
+  ) {
+    updateUpload(uploadId, { state: "registering", error: null, failedStep: null });
+
+    try {
+      await registerSource.mutateAsync(payload);
+      updateUpload(uploadId, { state: "done", failedStep: null });
+    } catch (registerError) {
+      updateUpload(uploadId, {
+        state: "failed",
+        error: registerError,
+        failedStep: "register",
+      });
+    }
+  }
+
+  async function runStorageUpload(upload: PendingUpload) {
+    updateUpload(upload.id, {
+      state: "uploading",
+      error: null,
+      failedStep: null,
+    });
+
+    try {
+      const payload = await uploadFileToStorage(courseId, upload.file);
+      updateUpload(upload.id, {
+        state: "uploaded",
+        storagePayload: payload,
+      });
+      await registerStoredFile(upload.id, payload);
+    } catch (uploadError) {
+      updateUpload(upload.id, {
+        state: "failed",
+        error: uploadError,
+        failedStep: "upload",
+      });
+    }
+  }
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const selectedFiles = event.target.files;
 
-    if (!file) {
+    if (!selectedFiles || selectedFiles.length === 0) {
       return;
     }
 
-    setUploadState("uploading");
-    setError(null);
+    const newUploads = Array.from(selectedFiles).map((file) =>
+      createPendingUpload(file),
+    );
 
-    try {
-      await upload.mutateAsync(file);
-      setUploadState("success");
-    } catch (uploadError) {
-      setUploadState("error");
-      setError(uploadError);
-    } finally {
-      if (inputRef.current) {
-        inputRef.current.value = "";
-      }
+    setUploads((current) => [...current, ...newUploads]);
+
+    for (const upload of newUploads) {
+      await runStorageUpload(upload);
+    }
+
+    if (inputRef.current) {
+      inputRef.current.value = "";
     }
   }
+
+  async function retryUpload(upload: PendingUpload) {
+    if (upload.failedStep === "register" && upload.storagePayload) {
+      await registerStoredFile(upload.id, upload.storagePayload);
+      return;
+    }
+
+    await runStorageUpload(upload);
+  }
+
+  const isBusy = uploads.some(
+    (upload) => upload.state === "uploading" || upload.state === "registering",
+  );
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -45,30 +139,63 @@ export function SourceUploader({ courseId }: { courseId: string }) {
         ref={inputRef}
         type="file"
         accept=".pdf,image/*,video/*"
+        multiple
         onChange={handleFileChange}
-        disabled={uploadState === "uploading"}
+        disabled={isBusy}
         className="mt-3 block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-slate-700"
       />
 
-      {uploadState === "uploading" && (
-        <p className="mt-2 text-sm text-slate-600">Uploading…</p>
-      )}
+      {uploads.length > 0 && (
+        <ul className="mt-4 space-y-3">
+          {uploads.map((upload) => (
+            <li
+              key={upload.id}
+              className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="font-medium text-slate-900">{upload.file.name}</p>
+                <button
+                  type="button"
+                  onClick={() => removeUpload(upload.id)}
+                  className="text-xs text-slate-500 hover:text-slate-800"
+                  disabled={
+                    upload.state === "uploading" ||
+                    upload.state === "registering"
+                  }
+                >
+                  Remove
+                </button>
+              </div>
 
-      {uploadState === "success" && (
-        <p className="mt-2 text-sm text-emerald-700">Upload successful.</p>
-      )}
+              {upload.state === "uploading" && (
+                <p className="mt-1 text-slate-600">Uploading…</p>
+              )}
 
-      {uploadState === "error" && (
-        <div className="mt-2">
-          <ErrorMessage
-            error={error}
-            onRetry={() => {
-              setUploadState("idle");
-              setError(null);
-              inputRef.current?.click();
-            }}
-          />
-        </div>
+              {upload.state === "registering" && (
+                <p className="mt-1 text-slate-600">Registering source…</p>
+              )}
+
+              {upload.state === "done" && (
+                <p className="mt-1 text-emerald-700">Upload successful.</p>
+              )}
+
+              {upload.state === "failed" && (
+                <div className="mt-2">
+                  <ErrorMessage
+                    error={upload.error}
+                    onRetry={() => retryUpload(upload)}
+                  />
+                  {upload.failedStep === "register" && (
+                    <p className="mt-1 text-xs text-slate-600">
+                      File is already in storage — retry will register the
+                      source without re-uploading.
+                    </p>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

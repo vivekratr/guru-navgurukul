@@ -1,7 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+  useMutation,
+} from "@tanstack/react-query";
+import { useState } from "react";
 
+import { useCourseResilience } from "@/features/courses/course-resilience";
 import { api } from "@/lib/api";
+import { isCourseProcessing } from "@/lib/course-processing";
 import { queryKeys } from "@/lib/query-keys";
+import type { RealtimeConnectionStatus } from "@/lib/realtime";
 
 export function useCourses() {
   return useQuery({
@@ -22,11 +31,70 @@ export function useCreateCourse() {
 }
 
 export function useCourse(courseId: string) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const [realtimeStatus, setRealtimeStatus] =
+    useState<RealtimeConnectionStatus>("disconnected");
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  );
+
+  const query = useQuery({
     queryKey: queryKeys.course(courseId),
     queryFn: () => api.getCourse(courseId),
     enabled: Boolean(courseId),
+    placeholderData: keepPreviousData,
+    retry: (failureCount, error) => {
+      if (!navigator.onLine) {
+        return false;
+      }
+
+      if (error instanceof Error && error.message === "Failed to fetch") {
+        return failureCount < 2;
+      }
+
+      return false;
+    },
+    refetchInterval: (q) => {
+      const status = q.state.data?.status;
+      if (!status || !isCourseProcessing(status)) {
+        return false;
+      }
+
+      if (realtimeStatus === "connected") {
+        return false;
+      }
+
+      return 3000;
+    },
   });
+
+  const realtimeConnected = realtimeStatus === "connected";
+
+  const { shouldPoll } = useCourseResilience({
+    courseId,
+    courseStatus: query.data?.status,
+    realtimeConnected,
+    setRealtimeStatus,
+    setIsOnline,
+  });
+
+  const isShowingStaleData =
+    Boolean(query.data) && query.isError && !query.isFetching;
+  const isLive =
+    realtimeConnected &&
+    query.data?.status !== undefined &&
+    isCourseProcessing(query.data.status);
+
+  return {
+    ...query,
+    realtimeStatus,
+    isOnline,
+    shouldPoll,
+    isShowingStaleData,
+    isLive,
+    invalidateCourse: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) }),
+  };
 }
 
 export function useGenerateCourse(courseId: string) {

@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import {
+  LiveStatusHint,
+  NetworkStatusBanner,
+  StaleDataBanner,
+} from "@/components/ui/ResilienceIndicators";
 import { ErrorMessage, LoadingMessage } from "@/components/ui/StateMessages";
 import { ConceptGraph } from "@/features/concept-graph/ConceptGraph";
 import { CourseStatusBadge } from "@/features/courses/CourseStatus";
@@ -13,6 +18,7 @@ import { SourceList } from "@/features/sources/SourceList";
 import { SourceUploader } from "@/features/sources/SourceUploader";
 import { TextSourceForm } from "@/features/sources/TextSourceForm";
 import { SummaryView } from "@/features/summary/SummaryView";
+import { isCourseProcessing } from "@/lib/course-processing";
 import { isWorkspaceContentUnlocked } from "@/lib/status-labels";
 
 type WorkspaceTab = "sources" | "summary" | "flashcards" | "concept-graph";
@@ -27,15 +33,23 @@ const TABS: { id: WorkspaceTab; label: string }[] = [
 export function CourseWorkspacePage() {
   const { courseId = "" } = useParams();
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("sources");
-  const { data: course, isLoading, isError, error, refetch } = useCourse(
-    courseId,
-  );
+  const {
+    data: course,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    realtimeStatus,
+    isOnline,
+    isShowingStaleData,
+    isLive,
+  } = useCourse(courseId);
 
-  if (isLoading) {
+  if (isLoading && !course) {
     return <LoadingMessage>Loading course…</LoadingMessage>;
   }
 
-  if (isError) {
+  if (isError && !course) {
     return <ErrorMessage error={error} onRetry={() => refetch()} />;
   }
 
@@ -44,6 +58,7 @@ export function CourseWorkspacePage() {
   }
 
   const contentUnlocked = isWorkspaceContentUnlocked(course.status);
+  const courseProcessing = isCourseProcessing(course.status);
 
   return (
     <div className="space-y-6">
@@ -54,10 +69,24 @@ export function CourseWorkspacePage() {
         >
           ← Back to courses
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-          {course.title}
-        </h1>
+        <div className="mt-2 flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-semibold text-slate-900">
+            {course.title}
+          </h1>
+          <LiveStatusHint
+            isLive={isLive}
+            isShowingStaleData={isShowingStaleData}
+          />
+        </div>
       </div>
+
+      <NetworkStatusBanner
+        isOnline={isOnline}
+        realtimeStatus={realtimeStatus}
+        courseProcessing={courseProcessing}
+      />
+
+      {isShowingStaleData && <StaleDataBanner />}
 
       <div className="grid gap-4 md:grid-cols-2">
         <CourseStatusBadge status={course.status} />
