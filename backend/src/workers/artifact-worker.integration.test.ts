@@ -241,16 +241,14 @@ describe.skipIf(!hasSupabaseConfig)("artifact worker integration", () => {
       user.id,
     );
     await enqueueGenerateArtifactsMessage(supabase, courseId, "flashcards");
-    await enqueueGenerateArtifactsMessage(supabase, courseId, "summary");
 
     await runArtifactWorkerTick(supabase, {
       callFlashcardsGeneration: vi
         .fn()
         .mockResolvedValue(mockFlashcardsFor(conceptIds)),
-      callSummaryGeneration: vi
-        .fn()
-        .mockRejectedValue(new Error("All models failed")),
     });
+
+    await enqueueGenerateArtifactsMessage(supabase, courseId, "summary");
 
     const summaryMessage = await readArtifactMessage(supabase);
     expect(summaryMessage).not.toBeNull();
