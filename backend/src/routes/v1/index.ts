@@ -1,6 +1,8 @@
 import { Router } from "express";
 
 import { pingBodySchema } from "../../schemas/ping.js";
+import authRouter from "./auth.js";
+import coursesRouter from "./courses.js";
 
 const v1Router = Router();
 
@@ -12,5 +14,8 @@ v1Router.post("/ping", (req, res) => {
   const body = pingBodySchema.parse(req.body);
   res.json({ ok: true, message: body.message });
 });
+
+v1Router.use("/auth", authRouter);
+v1Router.use("/courses", coursesRouter);
 
 export default v1Router;
