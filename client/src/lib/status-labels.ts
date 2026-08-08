@@ -87,3 +87,13 @@ export function hasUsableSources(
     (source) => source.status === "pending" || source.status === "done",
   );
 }
+
+export function hasPendingSources(
+  sources: { status: string }[],
+): boolean {
+  return sources.some((source) => source.status === "pending");
+}
+
+export function canRefreshCourse(status: CourseStatus): boolean {
+  return status === "ready" || status === "partially_ready";
+}

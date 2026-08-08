@@ -4,7 +4,7 @@ import {
   callRole,
   type CallRoleDependencies,
   flashcardsOutputSchema,
-  summaryOutputSchema,
+  modulesOutputSchema,
   validateFlashcardsSemantics,
 } from "../lib/llm/index.js";
 import { getRetryBackoffSeconds } from "./ingest/backoff.js";
@@ -17,7 +17,7 @@ import {
 import { parseArtifactQueueMessage } from "./artifact/message.js";
 import {
   buildFlashcardsPrompt,
-  buildSummaryPrompt,
+  buildModulesPrompt,
   type ConceptInput,
   type RelationshipInput,
 } from "./artifact/prompt.js";
@@ -65,13 +65,18 @@ export type ArtifactWorkerDependencies = {
     };
     model_used: string;
   }>;
-  callSummaryGeneration?: (
+  callModulesGeneration?: (
     courseTitle: string,
     concepts: ConceptInput[],
     relationships: RelationshipInput[],
     deps?: Partial<CallRoleDependencies>,
   ) => Promise<{
-    data: { short: string; detailed: string };
+    data: {
+      modules: Array<{
+        title: string;
+        paragraphs: string[];
+      }>;
+    };
     model_used: string;
   }>;
 };
@@ -106,13 +111,13 @@ async function defaultCallFlashcardsGeneration(
   );
 }
 
-async function defaultCallSummaryGeneration(
+async function defaultCallModulesGeneration(
   courseTitle: string,
   concepts: ConceptInput[],
   relationships: RelationshipInput[],
   deps?: Partial<CallRoleDependencies>,
 ) {
-  const prompt = buildSummaryPrompt(courseTitle, concepts, relationships);
+  const prompt = buildModulesPrompt(courseTitle, concepts, relationships);
 
   return callRole(
     {
@@ -120,14 +125,14 @@ async function defaultCallSummaryGeneration(
       messages: [
         {
           role: "system",
-          content: "You generate course summaries as JSON.",
+          content: "You generate structured learning modules as JSON.",
         },
         {
           role: "user",
           content: prompt,
         },
       ],
-      outputSchema: summaryOutputSchema,
+      outputSchema: modulesOutputSchema,
     },
     deps,
   );
@@ -372,9 +377,9 @@ export async function processArtifactMessage(
         throw error;
       }
     } else {
-      const callSummary =
-        workerDeps.callSummaryGeneration ?? defaultCallSummaryGeneration;
-      const result = await callSummary(
+      const callModules =
+        workerDeps.callModulesGeneration ?? defaultCallModulesGeneration;
+      const result = await callModules(
         course.title,
         knowledge.concepts,
         knowledge.relationships,
@@ -383,8 +388,7 @@ export async function processArtifactMessage(
 
       const { error } = await supabase.rpc("complete_artifact_summary", {
         p_course_id: parsed.course_id,
-        p_short: result.data.short,
-        p_detailed: result.data.detailed,
+        p_modules: result.data.modules,
         p_msg_id: queueMessage.msg_id,
         p_model_used: result.model_used,
         p_job_payload: jobPayload,

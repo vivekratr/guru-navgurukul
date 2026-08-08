@@ -16,23 +16,52 @@ import {
 import { useConceptGraph } from "@/features/courses/hooks";
 import type { CourseStatus } from "@/types/api";
 
+import { conceptNodeTypes } from "./ConceptNode";
+import { EDGE_VISUALS, layoutConceptGraph } from "./layout";
+
 import "@xyflow/react/dist/style.css";
 
-function layoutNodes(
-  nodes: { id: string; name: string }[],
-): Node<{ label: string }>[] {
-  const columns = 3;
-  const xGap = 220;
-  const yGap = 100;
+function buildFlowGraph(
+  nodes: {
+    id: string;
+    name: string;
+    difficulty: "beginner" | "intermediate" | "advanced" | null;
+  }[],
+  edges: {
+    from: string;
+    to: string;
+    type: "contains" | "prerequisite" | "related";
+  }[],
+): { flowNodes: Node[]; flowEdges: Edge[] } {
+  const positions = layoutConceptGraph(nodes, edges);
 
-  return nodes.map((node, index) => ({
+  const flowNodes: Node[] = nodes.map((node) => ({
     id: node.id,
-    data: { label: node.name },
-    position: {
-      x: (index % columns) * xGap,
-      y: Math.floor(index / columns) * yGap,
-    },
+    type: "concept",
+    data: { label: node.name, difficulty: node.difficulty },
+    position: positions.get(node.id) ?? { x: 0, y: 0 },
   }));
+
+  const flowEdges: Edge[] = edges.map((edge) => {
+    const visuals = EDGE_VISUALS[edge.type];
+
+    return {
+      id: `${edge.from}-${edge.to}-${edge.type}`,
+      source: edge.from,
+      target: edge.to,
+      type: "smoothstep",
+      animated: edge.type === "prerequisite",
+      style: {
+        stroke: visuals.stroke,
+        strokeWidth: 1.5,
+        strokeDasharray: visuals.strokeDasharray,
+      },
+      label: edge.type === "related" ? undefined : edge.type,
+      labelStyle: { fontSize: 10, fill: "#555" },
+    };
+  });
+
+  return { flowNodes, flowEdges };
 }
 
 export function ConceptGraph({
@@ -58,15 +87,7 @@ export function ConceptGraph({
       return { flowNodes: [], flowEdges: [] };
     }
 
-    const nodes = layoutNodes(data.nodes);
-    const edges: Edge[] = data.edges.map((edge) => ({
-      id: `${edge.from}-${edge.to}-${edge.type}`,
-      source: edge.from,
-      target: edge.to,
-      label: edge.type,
-    }));
-
-    return { flowNodes: nodes, flowEdges: edges };
+    return buildFlowGraph(data.nodes, data.edges);
   }, [data]);
 
   if (!enabled) {
@@ -96,13 +117,38 @@ export function ConceptGraph({
   }
 
   return (
-    <Card className="overflow-hidden !p-0">
-      <div className="h-[480px] w-full bg-pure-white">
-        <ReactFlow nodes={flowNodes} edges={flowEdges} fitView>
-          <Background color="#333333" gap={20} size={1} />
-          <Controls />
-        </ReactFlow>
+    <div className="space-y-4">
+      <Card className="overflow-hidden !p-0">
+        <div className="h-[560px] w-full bg-pure-white">
+          <ReactFlow
+            nodes={flowNodes}
+            edges={flowEdges}
+            nodeTypes={conceptNodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.2 }}
+            minZoom={0.4}
+            maxZoom={1.5}
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background color="#e5e5e5" gap={24} size={1} />
+            <Controls />
+          </ReactFlow>
+        </div>
+      </Card>
+      <div className="flex flex-wrap gap-4 text-body-sm text-charcoal">
+        <span className="flex items-center gap-2">
+          <span className="inline-block h-0.5 w-6 bg-blue-600" />
+          prerequisite
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="inline-block h-0.5 w-6 border-t-2 border-dashed border-green-600" />
+          contains
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="inline-block h-0.5 w-6 border-t border-dotted border-gray-400" />
+          related
+        </span>
       </div>
-    </Card>
+    </div>
   );
 }

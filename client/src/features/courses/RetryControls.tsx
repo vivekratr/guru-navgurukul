@@ -69,7 +69,7 @@ export function RetryControls({ course }: { course: CourseDetail }) {
             onClick={() => retrySummary.mutate()}
             disabled={retrySummary.isPending}
           >
-            {retrySummary.isPending ? "Retrying…" : "Retry summary"}
+            {retrySummary.isPending ? "Retrying…" : "Retry modules"}
           </Button>
         </div>
       )}

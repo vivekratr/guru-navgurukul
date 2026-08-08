@@ -120,9 +120,9 @@ describe("LLM output schemas", () => {
     ).toBe(false);
   });
 
-  it("rejects invalid summary output", () => {
+  it("rejects invalid modules output", () => {
     expect(
-      summaryOutputSchema.safeParse({ short: "", detailed: "" }).success,
+      summaryOutputSchema.safeParse({ modules: [] }).success,
     ).toBe(false);
   });
 });

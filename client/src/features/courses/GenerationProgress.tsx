@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { PillTag } from "@/components/ui/PillTag";
+import { ProcessQueueButton } from "@/features/courses/ProcessQueueButton";
 import type { CourseDetail } from "@/types/api";
 import {
   artifactStatusLabel,
@@ -74,6 +75,7 @@ export function GenerationProgress({ course }: { course: CourseDetail }) {
         <div className="mt-6 space-y-3">
           {(["flashcards", "summary"] as const).map((artifact) => {
             const status = course.artifact_status[artifact] ?? "pending";
+            const label = artifact === "summary" ? "modules" : artifact;
 
             return (
               <div
@@ -81,7 +83,7 @@ export function GenerationProgress({ course }: { course: CourseDetail }) {
                 className="flex items-center justify-between gap-4 text-body-sm"
               >
                 <span className="font-medium capitalize text-ink-black">
-                  {artifact}
+                  {label}
                 </span>
                 <PillTag accent={status === "done"}>
                   {artifactStatusLabel(status)}
@@ -91,6 +93,8 @@ export function GenerationProgress({ course }: { course: CourseDetail }) {
           })}
         </div>
       )}
+
+      <ProcessQueueButton courseId={course.id} courseStatus={course.status} />
     </Card>
   );
 }

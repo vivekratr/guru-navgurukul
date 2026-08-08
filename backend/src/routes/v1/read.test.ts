@@ -27,6 +27,11 @@ async function seedCourse(
     sources?: Array<{ type: string; status: string; last_error?: string | null }>;
     artifactStatuses?: Array<{ artifact_type: string; status: string }>;
     summaries?: Array<{ kind: string; content: string }>;
+    modules?: Array<{
+      position: number;
+      title: string;
+      paragraphs: string[];
+    }>;
     flashcards?: Array<{
       front: string;
       back: string;
@@ -123,6 +128,21 @@ async function seedCourse(
       if (relationshipError) {
         throw relationshipError;
       }
+    }
+  }
+
+  if (options?.modules) {
+    const { error } = await serviceClient.from("course_modules").insert(
+      options.modules.map((module) => ({
+        course_id: course.id,
+        position: module.position,
+        title: module.title,
+        paragraphs: module.paragraphs,
+      })),
+    );
+
+    if (error) {
+      throw error;
     }
   }
 
@@ -259,6 +279,13 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
           { kind: "short", content: "Short while generating" },
           { kind: "detailed", content: "Detailed while generating" },
         ],
+        modules: [
+          {
+            position: 1,
+            title: "While generating",
+            paragraphs: ["Short while generating", "Detailed while generating"],
+          },
+        ],
         concepts: [
           { name: "Hooks", difficulty: "beginner" },
           { name: "State", difficulty: "intermediate" },
@@ -271,9 +298,12 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
         { artifact_type: "flashcards", status: "done" },
         { artifact_type: "summary", status: "done" },
       ],
-      summaries: [
-        { kind: "short", content: "Ready short" },
-        { kind: "detailed", content: "Ready detailed" },
+      modules: [
+        {
+          position: 1,
+          title: "Overview",
+          paragraphs: ["Ready short", "Ready detailed"],
+        },
       ],
       flashcards: [
         { front: "Ready Q1", back: "Ready A1", concept_id: null },
@@ -291,9 +321,12 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
           { artifact_type: "flashcards", status: "done" },
           { artifact_type: "summary", status: "failed_permanent" },
         ],
-        summaries: [
-          { kind: "short", content: "Should not be returned" },
-          { kind: "detailed", content: "Should not be returned" },
+        modules: [
+          {
+            position: 1,
+            title: "Hidden",
+            paragraphs: ["Should not be returned"],
+          },
         ],
         flashcards: [{ front: "Partial Q", back: "Partial A", concept_id: null }],
         concepts: [{ name: "Partial Concept", difficulty: "advanced" }],
@@ -309,9 +342,12 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
           { artifact_type: "flashcards", status: "done" },
           { artifact_type: "summary", status: "done" },
         ],
-        summaries: [
-          { kind: "short", content: "Export short" },
-          { kind: "detailed", content: "Export detailed" },
+        modules: [
+          {
+            position: 1,
+            title: "Export module",
+            paragraphs: ["Export short", "Export detailed"],
+          },
         ],
         concepts: [
           {
@@ -361,9 +397,12 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
         { artifact_type: "flashcards", status: "done" },
         { artifact_type: "summary", status: "done" },
       ],
-      summaries: [
-        { kind: "short", content: "Foreign short" },
-        { kind: "detailed", content: "Foreign detailed" },
+      modules: [
+        {
+          position: 1,
+          title: "Foreign module",
+          paragraphs: ["Foreign short", "Foreign detailed"],
+        },
       ],
       flashcards: [{ front: "Foreign", back: "Secret", concept_id: null }],
       concepts: [{ name: "Foreign Concept", difficulty: "beginner" }],
@@ -484,20 +523,25 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
     }
   });
 
-  it("returns summary when generated", async () => {
+  it("returns modules when generated", async () => {
     const response = await request(app)
       .get(`/api/v1/courses/${readArtifactsCourse.id}/summary`)
       .set("Authorization", `Bearer ${userA.accessToken}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
-      short: "Export short",
-      detailed: "Export detailed",
+      modules: [
+        {
+          position: 1,
+          title: "Export module",
+          paragraphs: ["Export short", "Export detailed"],
+        },
+      ],
     });
     expect(response.body).not.toHaveProperty("created_at");
   });
 
-  it("rejects unavailable summary states", async () => {
+  it("rejects unavailable module states", async () => {
     const generating = await request(app)
       .get(`/api/v1/courses/${generatingCourse.id}/summary`)
       .set("Authorization", `Bearer ${userA.accessToken}`);

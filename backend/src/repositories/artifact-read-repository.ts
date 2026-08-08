@@ -25,6 +25,33 @@ export type ConceptRelationshipRow = {
   type: string;
 };
 
+export type ModuleRow = {
+  position: number;
+  title: string;
+  paragraphs: string[];
+};
+
+export async function listCourseModules(
+  supabase: SupabaseClient,
+  courseId: string,
+): Promise<ModuleRow[]> {
+  const { data, error } = await supabase
+    .from("course_modules")
+    .select("position, title, paragraphs")
+    .eq("course_id", courseId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map((row) => ({
+    position: row.position as number,
+    title: row.title as string,
+    paragraphs: row.paragraphs as string[],
+  }));
+}
+
 export async function listSummaries(
   supabase: SupabaseClient,
   courseId: string,

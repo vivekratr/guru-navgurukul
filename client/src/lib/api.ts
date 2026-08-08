@@ -6,6 +6,7 @@ import type {
   CourseDetail,
   CourseListItem,
   FlashcardsResponse,
+  PipelineTickResult,
   SourceCreated,
   SourceType,
   SummaryResponse,
@@ -95,6 +96,12 @@ export const api = {
     });
   },
 
+  refreshCourse(courseId: string): Promise<{ id: string; status: string }> {
+    return request(`/v1/courses/${courseId}/refresh`, {
+      method: "POST",
+    });
+  },
+
   generateCourse(courseId: string): Promise<{ id: string; status: string }> {
     return request(`/v1/courses/${courseId}/generate`, {
       method: "POST",
@@ -134,5 +141,11 @@ export const api = {
 
   getConceptGraph(courseId: string): Promise<ConceptGraphResponse> {
     return request(`/v1/courses/${courseId}/concept-graph`);
+  },
+
+  runPipelineTick(): Promise<PipelineTickResult> {
+    return request("/v1/pipeline/tick", {
+      method: "POST",
+    });
   },
 };

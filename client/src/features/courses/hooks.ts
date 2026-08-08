@@ -113,6 +113,25 @@ export function useGenerateCourse(courseId: string) {
   });
 }
 
+export function useRefreshCourse(courseId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => api.refreshCourse(courseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses });
+      queryClient.invalidateQueries({ queryKey: queryKeys.summary(courseId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.flashcards(courseId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.conceptGraph(courseId),
+      });
+    },
+  });
+}
+
 export function useRetryKnowledge(courseId: string) {
   const queryClient = useQueryClient();
 
@@ -143,6 +162,24 @@ export function useRetryArtifact(
           queryKey: queryKeys.summary(courseId),
         });
       }
+    },
+  });
+}
+
+export function usePipelineTick(courseId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => api.runPipelineTick(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.summary(courseId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.flashcards(courseId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.conceptGraph(courseId),
+      });
     },
   });
 }

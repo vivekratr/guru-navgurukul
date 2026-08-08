@@ -69,10 +69,18 @@ export type SourceCreated = {
   status: SourceStatus;
 };
 
-export type SummaryResponse = {
-  short: string;
-  detailed: string;
+export type CourseModule = {
+  position: number;
+  title: string;
+  paragraphs: string[];
 };
+
+export type ModulesResponse = {
+  modules: CourseModule[];
+};
+
+/** API still serves /summary — response is learning modules */
+export type SummaryResponse = ModulesResponse;
 
 export type Flashcard = {
   id: string;
@@ -100,4 +108,17 @@ export type ConceptGraphEdge = {
 export type ConceptGraphResponse = {
   nodes: ConceptGraphNode[];
   edges: ConceptGraphEdge[];
+};
+
+export type WorkerTickSummary = {
+  processed: number;
+  succeeded: number;
+  failed: number;
+  skipped: number;
+};
+
+export type PipelineTickResult = {
+  ingest: WorkerTickSummary;
+  knowledge: WorkerTickSummary;
+  artifacts: WorkerTickSummary;
 };

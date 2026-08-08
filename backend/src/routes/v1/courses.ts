@@ -49,8 +49,8 @@ coursesRouter.get(
   "/:id/summary",
   asyncHandler(async (req, res) => {
     const courseId = courseIdParamSchema.parse(req.params.id);
-    const summary = await readService.getCourseSummary(req.supabase!, courseId);
-    res.json(summary);
+    const modules = await readService.getCourseModules(req.supabase!, courseId);
+    res.json(modules);
   }),
 );
 
@@ -130,6 +130,19 @@ coursesRouter.delete(
     const courseId = courseIdParamSchema.parse(req.params.id);
     await courseService.deleteCourse(req.supabase!, courseId);
     res.status(204).send();
+  }),
+);
+
+coursesRouter.post(
+  "/:id/refresh",
+  asyncHandler(async (req, res) => {
+    const courseId = courseIdParamSchema.parse(req.params.id);
+    const course = await generationService.refreshCourseContent(
+      req.supabase!,
+      courseId,
+    );
+
+    res.status(202).json(course);
   }),
 );
 

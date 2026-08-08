@@ -20,9 +20,12 @@ export {
 export {
   flashcardItemSchema,
   flashcardsOutputSchema,
+  moduleItemSchema,
+  modulesOutputSchema,
   summaryOutputSchema,
   validateFlashcardsSemantics,
   type FlashcardsOutput,
+  type ModulesOutput,
   type SummaryOutput,
 } from "./schemas/content-generation.js";
 export {

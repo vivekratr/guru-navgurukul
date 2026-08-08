@@ -70,7 +70,7 @@ export async function uploadFileToStorage(
   return payload;
 }
 
-async function autoStartGeneration(
+async function afterSourceAdded(
   queryClient: QueryClient,
   courseId: string,
 ): Promise<void> {
@@ -78,11 +78,14 @@ async function autoStartGeneration(
     queryKeys.course(courseId),
   );
 
-  if (course?.status !== "draft") {
+  if (!course) {
     return;
   }
 
-  await api.generateCourse(courseId);
+  if (course.status === "draft") {
+    await api.generateCourse(courseId);
+  }
+
   await queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
   await queryClient.invalidateQueries({ queryKey: queryKeys.courses });
 }
@@ -94,7 +97,7 @@ export function useCreateTextSource(courseId: string) {
     mutationFn: (rawText: string) => api.createTextSource(courseId, rawText),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
-      await autoStartGeneration(queryClient, courseId);
+      await afterSourceAdded(queryClient, courseId);
     },
   });
 }
@@ -107,7 +110,7 @@ export function useRegisterFileSource(courseId: string) {
       api.createFileSource(courseId, payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
-      await autoStartGeneration(queryClient, courseId);
+      await afterSourceAdded(queryClient, courseId);
     },
   });
 }

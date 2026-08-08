@@ -2,6 +2,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import * as queueRepository from "../repositories/queue-repository.js";
 
+export async function refreshCourseContent(
+  supabase: SupabaseClient,
+  courseId: string,
+) {
+  const result = await queueRepository.refreshCourseContent(supabase, courseId);
+
+  return {
+    id: result.id,
+    status: result.status,
+  };
+}
+
 export async function generateCourse(
   supabase: SupabaseClient,
   courseId: string,

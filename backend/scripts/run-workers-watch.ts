@@ -1,18 +1,11 @@
 import { env } from "../src/config/index.js";
-import { getServiceSupabaseClient } from "../src/lib/supabase.js";
-import { runArtifactWorkerTick } from "../src/workers/artifact-worker.js";
-import { runIngestWorkerTick } from "../src/workers/ingest-worker.js";
-import { runKnowledgeWorkerTick } from "../src/workers/knowledge-worker.js";
+import {
+  runPipelineTick,
+  type WorkerTickSummary,
+} from "../src/services/pipeline-tick-service.js";
 
 const DEFAULT_IDLE_MS = 3_000;
 const DEFAULT_BUSY_MS = 250;
-
-type WorkerTickSummary = {
-  processed: number;
-  succeeded: number;
-  failed: number;
-  skipped: number;
-};
 
 function requireEnv(name: string, value: string | undefined): string {
   if (!value) {
@@ -43,20 +36,6 @@ function tickWasActive(summary: WorkerTickSummary): boolean {
 
 function formatTick(label: string, summary: WorkerTickSummary): string {
   return `${label} processed=${summary.processed} ok=${summary.succeeded} failed=${summary.failed} skipped=${summary.skipped}`;
-}
-
-async function runPipelineTick(): Promise<{
-  ingest: WorkerTickSummary;
-  knowledge: WorkerTickSummary;
-  artifacts: WorkerTickSummary;
-}> {
-  const supabase = getServiceSupabaseClient();
-
-  const ingest = await runIngestWorkerTick(supabase);
-  const knowledge = await runKnowledgeWorkerTick(supabase);
-  const artifacts = await runArtifactWorkerTick(supabase);
-
-  return { ingest, knowledge, artifacts };
 }
 
 async function main(): Promise<void> {

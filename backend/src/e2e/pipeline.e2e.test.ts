@@ -51,10 +51,14 @@ const mockKnowledgeSuccess = {
   model_used: "e2e-model",
 };
 
-const mockSummarySuccess = {
+const mockModulesSuccess = {
   data: {
-    short: "Short summary",
-    detailed: "Detailed summary",
+    modules: [
+      {
+        title: "Overview",
+        paragraphs: ["Short summary", "Detailed summary"],
+      },
+    ],
   },
   model_used: "e2e-model",
 };
@@ -109,7 +113,7 @@ async function drainArtifactQueue(
         },
         model_used: "e2e-model",
       }),
-      callSummaryGeneration: async () => mockSummarySuccess,
+      callModulesGeneration: async () => mockModulesSuccess,
     });
   }
 

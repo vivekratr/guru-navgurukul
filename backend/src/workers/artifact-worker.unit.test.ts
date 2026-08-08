@@ -7,7 +7,7 @@ import {
   isValidCourseStatusForArtifacts,
 } from "./artifact/idempotency.js";
 import { parseArtifactQueueMessage } from "./artifact/message.js";
-import { buildFlashcardsPrompt, buildSummaryPrompt } from "./artifact/prompt.js";
+import { buildFlashcardsPrompt, buildModulesPrompt } from "./artifact/prompt.js";
 
 describe("artifact worker unit logic", () => {
   it("parses valid queue messages", () => {
@@ -76,8 +76,8 @@ describe("artifact worker unit logic", () => {
     expect(prompt).toContain("Hooks");
   });
 
-  it("builds summary prompt from concepts", () => {
-    const prompt = buildSummaryPrompt(
+  it("builds modules prompt from concepts", () => {
+    const prompt = buildModulesPrompt(
       "React",
       [
         {
@@ -90,8 +90,9 @@ describe("artifact worker unit logic", () => {
       [],
     );
 
-    expect(prompt).toContain("short");
-    expect(prompt).toContain("detailed");
+    expect(prompt).toContain("modules");
+    expect(prompt).toContain("1 to 5 modules");
+    expect(prompt).toContain("1 to 3 paragraphs");
   });
 
   it("classifies configuration failures as non-retryable", () => {

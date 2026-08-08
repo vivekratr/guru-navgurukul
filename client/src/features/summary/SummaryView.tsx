@@ -26,24 +26,24 @@ export function SummaryView({
   if (!enabled) {
     return (
       <EmptyState
-        title="Summary not available yet"
-        description="Generate the course to create a summary."
+        title="Learning modules not available yet"
+        description="Generate the course to create modules."
       />
     );
   }
 
   if (isLoading) {
-    return <LoadingMessage>Loading summary…</LoadingMessage>;
+    return <LoadingMessage>Loading modules…</LoadingMessage>;
   }
 
   if (isError) {
     return <ErrorMessage error={error} onRetry={() => refetch()} />;
   }
 
-  if (!data) {
+  if (!data || data.modules.length === 0) {
     return (
       <EmptyState
-        title="Summary not generated yet"
+        title="Modules not generated yet"
         description="Content will appear when artifact generation completes."
       />
     );
@@ -51,18 +51,18 @@ export function SummaryView({
 
   return (
     <div className="mx-auto max-w-prose space-y-12">
-      <section>
-        <h3 className="font-display text-subheading-sm font-semibold text-ink-black">
-          Short summary
-        </h3>
-        <p className="body-copy mt-4">{data.short}</p>
-      </section>
-      <section>
-        <h3 className="font-display text-subheading-sm font-semibold text-ink-black">
-          Detailed summary
-        </h3>
-        <p className="body-copy mt-4">{data.detailed}</p>
-      </section>
+      {data.modules.map((module) => (
+        <section key={module.position}>
+          <h3 className="font-display text-subheading-sm font-semibold text-ink-black">
+            Module {module.position}: {module.title}
+          </h3>
+          <div className="body-copy mt-4 space-y-4">
+            {module.paragraphs.map((paragraph, index) => (
+              <p key={`${module.position}-${index}`}>{paragraph}</p>
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

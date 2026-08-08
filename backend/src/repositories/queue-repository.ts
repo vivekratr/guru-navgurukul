@@ -13,6 +13,27 @@ export type RetrySourceIngestionResult = {
   status: string;
 };
 
+export type RefreshCourseContentResult = {
+  id: string;
+  status: string;
+  enqueued: number;
+};
+
+export async function refreshCourseContent(
+  supabase: SupabaseClient,
+  courseId: string,
+): Promise<RefreshCourseContentResult> {
+  const { data, error } = await supabase.rpc("refresh_course_content", {
+    p_course_id: courseId,
+  });
+
+  if (error) {
+    throwMappedRpcError(error);
+  }
+
+  return data as RefreshCourseContentResult;
+}
+
 export async function startCourseIngestion(
   supabase: SupabaseClient,
   courseId: string,

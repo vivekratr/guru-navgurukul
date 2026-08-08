@@ -4,10 +4,18 @@ export const flashcardExportQuerySchema = z.object({
   format: z.enum(["json", "csv"]),
 });
 
-export const summaryResponseSchema = z.object({
-  short: z.string(),
-  detailed: z.string(),
+export const moduleItemSchema = z.object({
+  position: z.number().int().min(1).max(5),
+  title: z.string(),
+  paragraphs: z.array(z.string()).min(1).max(3),
 });
+
+export const modulesResponseSchema = z.object({
+  modules: z.array(moduleItemSchema).min(1).max(5),
+});
+
+/** @deprecated Use modulesResponseSchema */
+export const summaryResponseSchema = modulesResponseSchema;
 
 export const flashcardItemSchema = z.object({
   id: z.string().uuid(),

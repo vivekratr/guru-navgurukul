@@ -11,6 +11,7 @@ import { ErrorMessage, LoadingMessage } from "@/components/ui/StateMessages";
 import { ConceptGraph } from "@/features/concept-graph/ConceptGraph";
 import { CourseStatusBadge } from "@/features/courses/CourseStatus";
 import { GenerateButton } from "@/features/courses/GenerateButton";
+import { UpdateCourseButton } from "@/features/courses/UpdateCourseButton";
 import { GenerationProgress } from "@/features/courses/GenerationProgress";
 import { useCourse } from "@/features/courses/hooks";
 import { RetryControls } from "@/features/courses/RetryControls";
@@ -26,7 +27,7 @@ type WorkspaceTab = "sources" | "summary" | "flashcards" | "concept-graph";
 
 const TABS: { id: WorkspaceTab; label: string }[] = [
   { id: "sources", label: "Sources" },
-  { id: "summary", label: "Summary" },
+  { id: "summary", label: "Learn" },
   { id: "flashcards", label: "Flashcards" },
   { id: "concept-graph", label: "Concept Graph" },
 ];
@@ -60,6 +61,10 @@ export function CourseWorkspacePage() {
 
   const contentUnlocked = isWorkspaceContentUnlocked(course.status);
   const courseProcessing = isCourseProcessing(course.status);
+  const canAddSources =
+    course.status === "draft" ||
+    course.status === "ready" ||
+    course.status === "partially_ready";
 
   return (
     <div className="space-y-12">
@@ -135,13 +140,14 @@ export function CourseWorkspacePage() {
 
       {activeTab === "sources" && (
         <div className="space-y-8">
-          {course.status === "draft" && (
+          {canAddSources && (
             <>
               <TextSourceForm courseId={course.id} />
               <SourceUploader courseId={course.id} />
-              <GenerateButton course={course} />
             </>
           )}
+          {course.status === "draft" && <GenerateButton course={course} />}
+          <UpdateCourseButton course={course} />
           <SourceList courseId={course.id} sources={course.sources} />
         </div>
       )}

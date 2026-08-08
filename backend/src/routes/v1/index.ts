@@ -3,6 +3,7 @@ import { Router } from "express";
 import { pingBodySchema } from "../../schemas/ping.js";
 import authRouter from "./auth.js";
 import coursesRouter from "./courses.js";
+import pipelineRouter from "./pipeline.js";
 import sourcesRouter from "./sources.js";
 
 const v1Router = Router();
@@ -17,6 +18,7 @@ v1Router.post("/ping", (req, res) => {
 });
 
 v1Router.use("/auth", authRouter);
+v1Router.use("/pipeline", pipelineRouter);
 v1Router.use("/courses", coursesRouter);
 v1Router.use("/courses/:id/sources", sourcesRouter);
 

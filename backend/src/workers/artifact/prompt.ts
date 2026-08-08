@@ -46,7 +46,7 @@ export function buildFlashcardsPrompt(
   ].join("\n");
 }
 
-export function buildSummaryPrompt(
+export function buildModulesPrompt(
   courseTitle: string,
   concepts: ConceptInput[],
   relationships: RelationshipInput[],
@@ -74,8 +74,14 @@ export function buildSummaryPrompt(
       : "(none)",
     "",
     "Task:",
-    "Generate course summaries as JSON: { short, detailed }",
-    "short: concise overview. detailed: fuller explanation.",
-    "Both fields must be non-empty.",
+    "Generate learning modules as JSON: { modules: [{ title, paragraphs }] }",
+    "Rules:",
+    "- Produce 1 to 5 modules ordered from foundational to advanced.",
+    "- Each module has 1 to 3 paragraphs of readable learning content.",
+    "Each paragraph should be 2-4 sentences a learner can read and understand.",
+    "title and every paragraph must be non-empty.",
   ].join("\n");
 }
+
+/** @deprecated Use buildModulesPrompt */
+export const buildSummaryPrompt = buildModulesPrompt;

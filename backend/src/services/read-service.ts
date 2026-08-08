@@ -7,7 +7,7 @@ import * as courseRepository from "../repositories/course-repository.js";
 import {
   conceptGraphResponseSchema,
   flashcardsResponseSchema,
-  summaryResponseSchema,
+  modulesResponseSchema,
 } from "../schemas/artifact-read.js";
 
 const POST_KNOWLEDGE_COURSE_STATUSES = new Set([
@@ -95,29 +95,33 @@ async function assertArtifactDone(
   }
 }
 
-export async function getCourseSummary(
+export async function getCourseModules(
   supabase: SupabaseClient,
   courseId: string,
 ) {
   await assertCourseAccessible(supabase, courseId);
   await assertArtifactDone(supabase, courseId, "summary");
 
-  const rows = await artifactReadRepository.listSummaries(supabase, courseId);
-  const short = rows.find((row) => row.kind === "short")?.content;
-  const detailed = rows.find((row) => row.kind === "detailed")?.content;
+  const rows = await artifactReadRepository.listCourseModules(
+    supabase,
+    courseId,
+  );
 
-  if (short === undefined || detailed === undefined) {
+  if (rows.length === 0) {
     throw new AppError(
       500,
       "INTERNAL_ERROR",
-      "Summary data is incomplete",
+      "Module data is incomplete",
       true,
     );
   }
 
-  const response = { short, detailed };
-  return summaryResponseSchema.parse(response);
+  const response = { modules: rows };
+  return modulesResponseSchema.parse(response);
 }
+
+/** @deprecated Use getCourseModules */
+export const getCourseSummary = getCourseModules;
 
 export async function getCourseFlashcards(
   supabase: SupabaseClient,

@@ -106,10 +106,18 @@ function mockFlashcardsFor(conceptIds: string[]) {
   };
 }
 
-const mockSummary = {
+const mockModules = {
   data: {
-    short: "Short course summary",
-    detailed: "Detailed course summary with more context",
+    modules: [
+      {
+        title: "Introduction",
+        paragraphs: ["Short course summary", "More context here"],
+      },
+      {
+        title: "Deep dive",
+        paragraphs: ["Detailed course summary with more context"],
+      },
+    ],
   },
   model_used: "model-b",
 };
@@ -216,7 +224,7 @@ describe.skipIf(!hasSupabaseConfig)("artifact worker integration", () => {
       callFlashcardsGeneration: vi
         .fn()
         .mockResolvedValue(mockFlashcardsFor(conceptIds)),
-      callSummaryGeneration: vi.fn().mockResolvedValue(mockSummary),
+      callModulesGeneration: vi.fn().mockResolvedValue(mockModules),
     });
 
     const { data: course } = await supabase
@@ -227,12 +235,12 @@ describe.skipIf(!hasSupabaseConfig)("artifact worker integration", () => {
 
     expect(course?.status).toBe("ready");
 
-    const { count: summaryCount } = await supabase
-      .from("summaries")
+    const { count: moduleCount } = await supabase
+      .from("course_modules")
       .select("*", { count: "exact", head: true })
       .eq("course_id", courseId);
 
-    expect(summaryCount).toBe(2);
+    expect(moduleCount).toBe(2);
   });
 
   it("sets partially_ready when flashcards succeed and summary fails permanently", async () => {
@@ -257,7 +265,7 @@ describe.skipIf(!hasSupabaseConfig)("artifact worker integration", () => {
       supabase,
       { ...summaryMessage!, read_ct: 4 },
       {
-        callSummaryGeneration: vi
+        callModulesGeneration: vi
           .fn()
           .mockRejectedValue(new Error("All models failed")),
       },
@@ -364,13 +372,13 @@ describe.skipIf(!hasSupabaseConfig)("artifact worker integration", () => {
     const retryMessage = await readArtifactMessage(supabase);
     expect(retryMessage?.message.artifact_type).toBe("summary");
 
-    const callSummary = vi.fn().mockResolvedValue(mockSummary);
+    const callModules = vi.fn().mockResolvedValue(mockModules);
     const outcome = await processArtifactMessage(supabase, retryMessage!, {
-      callSummaryGeneration: callSummary,
+      callModulesGeneration: callModules,
     });
 
     expect(outcome).toBe("succeeded");
-    expect(callSummary).toHaveBeenCalledTimes(1);
+    expect(callModules).toHaveBeenCalledTimes(1);
 
     const { count: flashcardCount } = await supabase
       .from("flashcards")
@@ -395,25 +403,25 @@ describe.skipIf(!hasSupabaseConfig)("artifact worker integration", () => {
     expect(course?.status).toBe("ready");
   });
 
-  it("recovers crash after persistence without duplicate summaries", async () => {
+  it("recovers crash after persistence without duplicate modules", async () => {
     const { courseId } = await createCourseWithKnowledge(supabase, user.id);
     await enqueueGenerateArtifactsMessage(supabase, courseId, "summary");
 
-    const callSummary = vi.fn().mockResolvedValue(mockSummary);
-    await runArtifactWorkerTick(supabase, { callSummaryGeneration: callSummary });
+    const callModules = vi.fn().mockResolvedValue(mockModules);
+    await runArtifactWorkerTick(supabase, { callModulesGeneration: callModules });
 
     await enqueueGenerateArtifactsMessage(supabase, courseId, "summary");
 
     const duplicateMessage = await readArtifactMessage(supabase);
     const outcome = await processArtifactMessage(supabase, duplicateMessage!, {
-      callSummaryGeneration: callSummary,
+      callModulesGeneration: callModules,
     });
 
     expect(outcome).toBe("skipped");
-    expect(callSummary).toHaveBeenCalledTimes(1);
+    expect(callModules).toHaveBeenCalledTimes(1);
 
     const { count } = await supabase
-      .from("summaries")
+      .from("course_modules")
       .select("*", { count: "exact", head: true })
       .eq("course_id", courseId);
 
@@ -429,7 +437,7 @@ describe.skipIf(!hasSupabaseConfig)("artifact worker integration", () => {
     await enqueueGenerateArtifactsMessage(supabase, courseId, "summary");
 
     await runArtifactWorkerTick(supabase, {
-      callSummaryGeneration: vi.fn().mockResolvedValue(mockSummary),
+      callModulesGeneration: vi.fn().mockResolvedValue(mockModules),
     });
 
     await enqueueGenerateArtifactsMessage(supabase, courseId, "flashcards");
@@ -491,7 +499,7 @@ describe.skipIf(!hasSupabaseConfig)("artifact worker integration", () => {
           callFlashcardsGeneration: vi
             .fn()
             .mockRejectedValue(new Error("All models failed")),
-          callSummaryGeneration: vi
+          callModulesGeneration: vi
             .fn()
             .mockRejectedValue(new Error("All models failed")),
         },
