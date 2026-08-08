@@ -430,3 +430,27 @@ $$;
 
 revoke all on function public.set_ingest_message_vt(bigint, int) from public;
 grant execute on function public.set_ingest_message_vt(bigint, int) to service_role;
+
+create or replace function public.archive_malformed_ingest_message(
+  p_msg_id bigint,
+  p_payload jsonb,
+  p_error text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, pgmq
+as $$
+begin
+  perform pgmq.archive('ingest_source', p_msg_id);
+
+  insert into public.job_log (
+    queue_name, msg_id, payload, status, attempt, error
+  ) values (
+    'ingest_source', p_msg_id, p_payload, 'dead', 0, left(p_error, 1000)
+  );
+end;
+$$;
+
+revoke all on function public.archive_malformed_ingest_message(bigint, jsonb, text) from public;
+grant execute on function public.archive_malformed_ingest_message(bigint, jsonb, text) to service_role;

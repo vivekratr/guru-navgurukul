@@ -169,6 +169,8 @@ begin
 end;
 $$;
 
+grant execute on function public.enqueue_ingest_source_message(uuid) to service_role;
+
 grant execute on function public.start_course_ingestion(uuid) to authenticated;
 grant execute on function public.retry_source_ingestion(uuid, uuid) to authenticated;
 
