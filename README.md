@@ -30,7 +30,7 @@ The API validates and enqueues work. Workers drain queues. The browser never hol
 | `supabase/migrations/` | Schema, RLS, pgmq queues, worker RPCs |
 | `supabase/functions/` | Edge Function workers (optional; not used in default local flow) |
 | `shared/` | Shared TypeScript project references |
-| `tests/` | Unit, integration, and end-to-end tests |
+| `tests/` | Co-located Vitest suites in `backend/src` and `client/src` |
 
 Install dependencies in `client/` and `backend/` separately.
 
