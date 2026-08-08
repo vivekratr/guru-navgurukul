@@ -11,9 +11,9 @@ import {
 } from "../lib/storage.js";
 import {
   API_CANCELLABLE_SOURCE_STATUSES,
-  INITIAL_SOURCE_STATUS,
 } from "../lib/source-state.js";
 import * as courseRepository from "../repositories/course-repository.js";
+import * as queueRepository from "../repositories/queue-repository.js";
 import * as sourceRepository from "../repositories/source-repository.js";
 import type { CreateSourceBody } from "../schemas/source.js";
 
@@ -142,10 +142,5 @@ export async function retrySource(
     invalidSourceState("Source is not in a failed state");
   }
 
-  return sourceRepository.updateSourceStatus(
-    supabase,
-    source.id,
-    INITIAL_SOURCE_STATUS,
-    0,
-  );
+  return queueRepository.retrySourceIngestion(supabase, courseId, sourceId);
 }

@@ -7,6 +7,7 @@ import {
   createCourseBodySchema,
 } from "../../schemas/course.js";
 import * as courseService from "../../services/course-service.js";
+import * as generationService from "../../services/generation-service.js";
 
 function asyncHandler(
   handler: (req: Request, res: Response) => Promise<void>,
@@ -57,6 +58,19 @@ coursesRouter.delete(
     const courseId = courseIdParamSchema.parse(req.params.id);
     await courseService.deleteCourse(req.supabase!, courseId);
     res.status(204).send();
+  }),
+);
+
+coursesRouter.post(
+  "/:id/generate",
+  asyncHandler(async (req, res) => {
+    const courseId = courseIdParamSchema.parse(req.params.id);
+    const course = await generationService.generateCourse(
+      req.supabase!,
+      courseId,
+    );
+
+    res.status(202).json(course);
   }),
 );
 
