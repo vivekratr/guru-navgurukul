@@ -20,6 +20,10 @@ const envSchema = z.object({
   ),
   SUPABASE_ANON_KEY: optionalSecret,
   SUPABASE_SERVICE_ROLE_KEY: optionalSecret,
+  DATABASE_URL: z.preprocess(
+    emptyToUndefined,
+    z.string().min(1).optional(),
+  ),
   OPENROUTER_API_KEY: optionalSecret,
 });
 
