@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./shared" },
+    { "path": "./client" },
+    { "path": "./backend" },
+    { "path": "./supabase/functions" }
+  ]
+}

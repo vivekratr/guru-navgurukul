@@ -48,7 +48,10 @@ Desktop.ini
 
 # Project-local docs & Cursor config — do not remove from .gitignore
 docs/
+.agents
+AGENTS.md
 .cursor/
+skills-lock.json
 
 # Editor / IDE
 .idea/

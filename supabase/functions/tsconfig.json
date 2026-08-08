@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "types": []
+  },
+  "include": [
+    "process-ingest-queue/**/*.ts",
+    "process-knowledge-queue/**/*.ts",
+    "process-artifacts-queue/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
