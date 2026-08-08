@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+out/
+.vite/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+!.env*.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test & coverage
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Supabase local dev
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# Vercel
+.vercel/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Project-local docs & Cursor config — do not remove from .gitignore
+docs/
+.cursor/
+
+# Editor / IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Deno (Edge Functions local cache)
+.deno/
