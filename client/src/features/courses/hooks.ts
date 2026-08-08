@@ -55,6 +55,10 @@ export function useCourse(courseId: string) {
       return false;
     },
     refetchInterval: (q) => {
+      if (typeof document !== "undefined" && document.hidden) {
+        return false;
+      }
+
       const status = q.state.data?.status;
       if (!status || !isCourseProcessing(status)) {
         return false;
