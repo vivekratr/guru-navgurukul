@@ -106,16 +106,24 @@ cd ../client && npm install
 
 ## 4. Run locally
 
-Use **three terminals** for full pipeline (API + UI + workers).
+Use **two terminals** for full pipeline (API + workers + UI).
 
-### Terminal 1 — API
+### Terminal 1 — Backend (API + auto workers)
 
 ```bash
 cd backend
-npm run dev
+npm run dev:pipeline
 ```
 
-API listens on **http://localhost:3001** (`/api/v1/...`).
+This starts the API on **http://localhost:3001** and a background worker loop that
+automatically processes ingest → knowledge → artifacts queues.
+
+Alternatively, run them separately:
+
+```bash
+npm run dev            # API only
+npm run workers:watch  # background workers only
+```
 
 ### Terminal 2 — Frontend
 
@@ -126,27 +134,22 @@ npm run dev
 
 App on **http://localhost:5173**. Vite proxies `/api` to the backend.
 
-### Terminal 3 — Workers (repeat or loop after Generate)
+After adding a source, generation starts automatically — you do not need to click
+**Generate** manually. Workers pick up queued jobs within a few seconds.
 
-Each command runs **one queue tick** (processes a batch, then exits):
+### One-off worker ticks (optional)
+
+Each command below runs **one batch** and then exits:
 
 ```bash
 cd backend
 
-npm run worker:ingest      # ingest_source queue
-npm run worker:knowledge   # extract_knowledge queue
-npm run worker:artifacts   # generate_artifacts queue
+npm run worker:ingest
+npm run worker:knowledge
+npm run worker:artifacts
 ```
 
-Typical flow after clicking **Generate** on a course:
-
-1. `worker:ingest` until ingest queue empty (sources → `done`)
-2. `worker:knowledge` once (course → `generating_artifacts`)
-3. `worker:artifacts` until artifact queue empty (course → `ready` or `partially_ready`)
-
 Workers need `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `OPENROUTER_API_KEY` in `backend/.env`.
-
-For continuous processing without cron, re-run workers on an interval (e.g. every 10s) or invoke manually after each stage.
 
 ## 5. Build & test
 

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:pipeline": "tsx scripts/dev-pipeline.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
@@ -24,6 +25,7 @@
     "worker:ingest": "tsx scripts/run-ingest-worker.ts",
     "worker:knowledge": "tsx scripts/run-knowledge-worker.ts",
     "worker:artifacts": "tsx scripts/run-artifact-worker.ts",
+    "workers:watch": "tsx scripts/run-workers-watch.ts",
     "inspect:jobs": "tsx scripts/inspect-jobs.ts",
     "inspect:failed-jobs": "tsx scripts/inspect-jobs.ts --failed"
   },

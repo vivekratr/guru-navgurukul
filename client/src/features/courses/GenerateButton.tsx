@@ -17,7 +17,8 @@ export function GenerateButton({ course }: { course: CourseDetail }) {
         Generate course content
       </h3>
       <p className="body-copy-muted mt-2">
-        Start ingestion and content generation for all pending sources.
+        Generation starts automatically when you add a source. Use this if you
+        need to restart processing for pending sources.
       </p>
 
       <Button

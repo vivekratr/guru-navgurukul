@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
@@ -9,7 +9,7 @@ import {
   getVideoDurationSec,
   SOURCE_UPLOADS_BUCKET,
 } from "@/lib/storage";
-import type { SourceType } from "@/types/api";
+import type { CourseDetail, SourceType } from "@/types/api";
 
 export type FileSourcePayload = {
   type: Exclude<SourceType, "text">;
@@ -70,13 +70,31 @@ export async function uploadFileToStorage(
   return payload;
 }
 
+async function autoStartGeneration(
+  queryClient: QueryClient,
+  courseId: string,
+): Promise<void> {
+  const course = queryClient.getQueryData<CourseDetail>(
+    queryKeys.course(courseId),
+  );
+
+  if (course?.status !== "draft") {
+    return;
+  }
+
+  await api.generateCourse(courseId);
+  await queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
+  await queryClient.invalidateQueries({ queryKey: queryKeys.courses });
+}
+
 export function useCreateTextSource(courseId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (rawText: string) => api.createTextSource(courseId, rawText),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
+      await autoStartGeneration(queryClient, courseId);
     },
   });
 }
@@ -87,8 +105,9 @@ export function useRegisterFileSource(courseId: string) {
   return useMutation({
     mutationFn: (payload: FileSourcePayload) =>
       api.createFileSource(courseId, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.course(courseId) });
+      await autoStartGeneration(queryClient, courseId);
     },
   });
 }
