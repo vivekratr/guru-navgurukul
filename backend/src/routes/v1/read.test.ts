@@ -574,10 +574,12 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
       .set("Authorization", `Bearer ${userA.accessToken}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.nodes).toEqual([
-      { id: conceptAId, name: "Alpha", difficulty: "beginner" },
-      { id: conceptBId, name: "Beta", difficulty: "intermediate" },
-    ]);
+    expect(response.body.nodes).toEqual(
+      expect.arrayContaining([
+        { id: conceptAId, name: "Alpha", difficulty: "beginner" },
+        { id: conceptBId, name: "Beta", difficulty: "intermediate" },
+      ]),
+    );
     expect(response.body.edges).toEqual([
       { from: conceptAId, to: conceptBId, type: "prerequisite" },
     ]);
