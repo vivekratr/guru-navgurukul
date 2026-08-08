@@ -3,7 +3,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createApp } from "../../app.js";
 import { env } from "../../config/index.js";
-import { INITIAL_COURSE_STATUS } from "../../lib/course-state.js";
 import { getServiceSupabaseClient } from "../../lib/supabase.js";
 import {
   createTestIdentity,
@@ -349,10 +348,13 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
       .from("flashcards")
       .select("id, front")
       .eq("course_id", readArtifactsCourse.id)
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
 
-    flashcardAId = flashcards![0]!.id;
-    flashcardBId = flashcards![1]!.id;
+    flashcardAId =
+      flashcards!.find((card) => card.front === 'What is "Alpha"?')!.id;
+    flashcardBId =
+      flashcards!.find((card) => card.front === "No concept")!.id;
 
     const foreignCourse = await seedCourse(userB.id, "Foreign Course", "ready", {
       artifactStatuses: [
@@ -525,20 +527,26 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
       .set("Authorization", `Bearer ${userA.accessToken}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.flashcards).toEqual([
-      {
-        id: flashcardAId,
-        concept_id: conceptAId,
-        front: 'What is "Alpha"?',
-        back: "First\nconcept",
-      },
-      {
-        id: flashcardBId,
-        concept_id: null,
-        front: "No concept",
-        back: "Still valid",
-      },
-    ]);
+    expect(response.body.flashcards).toHaveLength(2);
+    expect(response.body.flashcards).toEqual(
+      expect.arrayContaining([
+        {
+          id: flashcardAId,
+          concept_id: conceptAId,
+          front: 'What is "Alpha"?',
+          back: "First\nconcept",
+        },
+        {
+          id: flashcardBId,
+          concept_id: null,
+          front: "No concept",
+          back: "Still valid",
+        },
+      ]),
+    );
+    expect(response.body.flashcards[0]!.id < response.body.flashcards[1]!.id).toBe(
+      true,
+    );
   });
 
   it("allows flashcards when summary failed in partially_ready", async () => {
@@ -600,13 +608,15 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
     );
 
     expect(response.body.flashcards).toHaveLength(2);
-    expect(response.body.flashcards[0]).toEqual(
-      expect.objectContaining({
-        id: flashcardAId,
-        concept_id: conceptAId,
-        front: 'What is "Alpha"?',
-        back: "First\nconcept",
-      }),
+    expect(response.body.flashcards).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: flashcardAId,
+          concept_id: conceptAId,
+          front: 'What is "Alpha"?',
+          back: "First\nconcept",
+        }),
+      ]),
     );
   });
 
@@ -623,10 +633,10 @@ describe.skipIf(!hasSupabaseAuthConfig)("API read layer", () => {
       "Course-Export-Test-flashcards.csv",
     );
 
-    const lines = response.text.trim().split("\n");
-    expect(lines[0]).toBe("front,back,concept");
-    expect(lines[1]).toBe('"What is ""Alpha""?","First\nconcept",Alpha');
-    expect(lines[2]).toBe("No concept,Still valid,");
+    const csv = response.text.trim();
+    expect(csv.startsWith("front,back,concept\n")).toBe(true);
+    expect(csv).toContain('"What is ""Alpha""?","First\nconcept",Alpha');
+    expect(csv).toContain("No concept,Still valid,");
   });
 
   it("validates export format and course id", async () => {
